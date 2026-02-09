@@ -131,7 +131,7 @@ def search_duckduckgo(query, max_results=10, region="wt-wt", timelimit=None,
         ddgs = DDGS()
         if search_type == "news":
             raw = list(ddgs.news(
-                keywords=query,
+                query,
                 region=region,
                 timelimit=timelimit,
                 max_results=max_results
@@ -147,7 +147,7 @@ def search_duckduckgo(query, max_results=10, region="wt-wt", timelimit=None,
                 })
         else:
             raw = list(ddgs.text(
-                keywords=query,
+                query,
                 region=region,
                 timelimit=timelimit,
                 max_results=max_results
