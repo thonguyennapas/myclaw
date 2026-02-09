@@ -1,17 +1,19 @@
 ---
 name: web-search
-description: "Tìm kiếm web thực sự bằng script Python. BẮT BUỘC sử dụng khi cần thông tin mới từ internet. Hỗ trợ Tavily, DuckDuckGo, Google."
+description: "Tìm kiếm web bằng script search.py (KHÔNG dùng Brave Search). Chạy: python3 ~/.openclaw/skills/web-search/scripts/search.py 'query'. Hỗ trợ Tavily, DuckDuckGo, Google. KHÔNG cần Brave API key."
 ---
 
-# Web Search — Tìm kiếm internet thực sự
+# Web Search — Tìm kiếm internet bằng search.py
 
-## Khi nào BẮT BUỘC dùng
-- Cần thông tin mới/cập nhật từ internet
+> ⚠️ **QUAN TRỌNG**: KHÔNG sử dụng Brave Search. KHÔNG yêu cầu BRAVE_API_KEY.
+> Skill này dùng script `search.py` có sẵn. Chỉ cần chạy lệnh bash bên dưới.
+
+## Khi nào dùng
+- Cần thông tin mới từ internet
 - Nghiên cứu xu hướng, chính sách, tin tức
-- Xác minh nhận định hoặc tìm nguồn chính thức
-- Người dùng hỏi về sự kiện gần đây
+- Xác minh nhận định hoặc tìm nguồn
 
-## Cách sử dụng
+## Cách sử dụng — LUÔN chạy bằng bash
 
 ### Tìm kiếm cơ bản:
 ```bash
@@ -28,19 +30,19 @@ python3 ~/.openclaw/skills/web-search/scripts/search.py "chính sách blockchain
 python3 ~/.openclaw/skills/web-search/scripts/search.py "NHNN blockchain" --type news --region vn-vi
 ```
 
-### Tìm sâu (Tavily):
+### Tìm sâu (nếu có TAVILY_API_KEY):
 ```bash
 python3 ~/.openclaw/skills/web-search/scripts/search.py "CBDC 2025" --engine tavily --depth advanced
 ```
 
-### Nhiều từ khóa:
+### Nhiều từ khóa cùng lúc:
 ```bash
 python3 ~/.openclaw/skills/web-search/scripts/search.py --batch "blockchain VN;CBDC;sandbox Đà Nẵng" --format md
 ```
 
 ### Đọc nội dung URL:
 ```bash
-python3 ~/.openclaw/skills/web-search/scripts/search.py --extract "https://chinhphu.vn/bai-viet"
+python3 ~/.openclaw/skills/web-search/scripts/search.py --extract "https://example.com/article"
 ```
 
 ### Lưu kết quả:
@@ -58,9 +60,8 @@ python3 ~/.openclaw/skills/web-search/scripts/search.py "query" --output results
 | `--max` | Số kết quả | Mặc định: 10 |
 | `--time` | Giới hạn | `d`=ngày, `w`=tuần, `m`=tháng, `y`=năm |
 | `--format` | Output | `text`, `md`, `json` |
-| `--status` | Check engines | Không cần giá trị |
 
 ## Lưu ý
-- Auto mode tự chọn engine tốt nhất: Tavily → DuckDuckGo
+- Engine tự động: Tavily (nếu có key) → DuckDuckGo (miễn phí)
 - Luôn dùng `--region vn-vi` khi tìm tiếng Việt
-- Dùng `--format md` khi cần output đẹp cho báo cáo
+- KHÔNG BAO GIỜ yêu cầu Brave API key — skill này không dùng Brave

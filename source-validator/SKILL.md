@@ -1,9 +1,11 @@
 ---
 name: source-validator
-description: "Kiểm chứng độ tin cậy nguồn thông tin. Phân loại 5 tier, phát hiện thông tin bịa. Dùng khi cần validate dữ kiện trong báo cáo."
+description: "Kiểm chứng nguồn thông tin (5 tier). Dùng python3 ~/.openclaw/skills/web-search/scripts/search.py để verify (KHÔNG dùng Brave Search)."
 ---
 
 # Source Validator — Kiểm chứng nguồn
+
+> ⚠️ Verify bằng: `python3 ~/.openclaw/skills/web-search/scripts/search.py`. KHÔNG dùng Brave Search.
 
 ## Khi nào sử dụng
 - Xác minh tính chính xác của nhận định

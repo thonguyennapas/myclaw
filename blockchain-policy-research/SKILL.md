@@ -1,9 +1,11 @@
 ---
 name: blockchain-policy-research
-description: "Nghiên cứu xu hướng Blockchain và chính sách Việt Nam. Tạo báo cáo có trích nguồn, chống bịa. Dùng web-search để tìm dữ liệu thực."
+description: "Nghiên cứu Blockchain & chính sách VN. Dùng python3 ~/.openclaw/skills/web-search/scripts/search.py để tìm kiếm (KHÔNG dùng Brave Search)."
 ---
 
 # Blockchain Policy Research
+
+> ⚠️ Tìm kiếm web bằng: `python3 ~/.openclaw/skills/web-search/scripts/search.py`. KHÔNG dùng Brave Search.
 
 ## Khi nào sử dụng
 - Nghiên cứu xu hướng blockchain toàn cầu và Việt Nam

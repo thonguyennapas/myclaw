@@ -1,9 +1,12 @@
 ---
 name: deep-research-orchestrator
-description: "Điều phối nghiên cứu chuyên sâu: kết hợp web-search, source-validator, và blockchain-policy-research để chạy nghiên cứu tự động. Dùng khi cần nghiên cứu đầy đủ hoặc cập nhật báo cáo."
+description: "Điều phối nghiên cứu chuyên sâu bằng script search.py (KHÔNG dùng Brave Search). Chạy python3 ~/.openclaw/skills/web-search/scripts/search.py để tìm dữ liệu, rồi viết báo cáo."
 ---
 
 # Deep Research Orchestrator — Điều phối nghiên cứu
+
+> ⚠️ **QUAN TRỌNG**: KHÔNG sử dụng Brave Search. KHÔNG yêu cầu BRAVE_API_KEY.
+> Sử dụng script `search.py` để tìm kiếm. Chỉ cần chạy lệnh bash bên dưới.
 
 ## Khi nào sử dụng
 - Nghiên cứu mới từ đầu (full report)
@@ -13,47 +16,41 @@ description: "Điều phối nghiên cứu chuyên sâu: kết hợp web-search,
 ## Quy trình tổng thể
 
 ```
-web-search (tìm kiếm) → source-validator (kiểm chứng) → blockchain-policy-research (viết báo cáo)
+search.py (tìm kiếm) → source-validator (kiểm chứng) → viết báo cáo 5 phần
 ```
 
-### Phase 1: THU THẬP (dùng web-search)
+### Phase 1: THU THẬP — chạy search.py qua bash
 ```bash
-# Xu hướng
-python3 ~/.openclaw/skills/web-search/scripts/search.py --batch "blockchain trends 2025;CBDC global;RWA tokenization;DeFi enterprise" --format md --output ~/research/raw_trends.md
+# Xu hướng blockchain
+python3 ~/.openclaw/skills/web-search/scripts/search.py --batch "blockchain trends 2025;CBDC global;RWA tokenization;DeFi enterprise" --format md --output /tmp/research/raw_trends.md
 
-# Chính sách VN
-python3 ~/.openclaw/skills/web-search/scripts/search.py --batch "blockchain Việt Nam chính sách;NHNN blockchain;sandbox fintech VN" --region vn-vi --format md --output ~/research/raw_policy.md
+# Chính sách Việt Nam
+python3 ~/.openclaw/skills/web-search/scripts/search.py --batch "blockchain Việt Nam chính sách;NHNN blockchain;sandbox fintech VN" --region vn-vi --format md --output /tmp/research/raw_policy.md
 
-# Đà Nẵng
-python3 ~/.openclaw/skills/web-search/scripts/search.py "Đà Nẵng blockchain sandbox thí điểm 2025 2026" --region vn-vi --max 15 --format md --output ~/research/raw_danang.md
+# Đà Nẵng sandbox
+python3 ~/.openclaw/skills/web-search/scripts/search.py "Đà Nẵng blockchain sandbox thí điểm 2025 2026" --region vn-vi --max 15 --format md --output /tmp/research/raw_danang.md
 
-# NAPAS / Thanh toán
-python3 ~/.openclaw/skills/web-search/scripts/search.py --batch "blockchain interbank payment;NAPAS blockchain;đối soát blockchain" --format md --output ~/research/raw_napas.md
+# NAPAS & Thanh toán
+python3 ~/.openclaw/skills/web-search/scripts/search.py --batch "blockchain interbank payment;NAPAS Vietnam;đối soát blockchain" --format md --output /tmp/research/raw_napas.md
 ```
 
-### Phase 2: KIỂM CHỨNG (dùng source-validator)
+### Phase 2: KIỂM CHỨNG (source-validator)
 - Phân loại nguồn theo 5 tier
 - Cross-check dữ kiện quan trọng (≥2 nguồn)
-- Loại bỏ nguồn Tier 5
+- Loại bỏ nguồn Tier 5 (social media, marketing)
 - Đánh dấu gaps (thiếu thông tin)
 
-### Phase 3: VIẾT BÁO CÁO (dùng blockchain-policy-research)
-Viết theo cấu trúc 5 phần: A (Xu hướng) → B (Chính sách) → C (Đà Nẵng) → D (NAPAS) → E (Summary)
+### Phase 3: VIẾT BÁO CÁO 5 PHẦN
+**A — Xu hướng:** Bảng xu hướng (Tên | Mô tả | Mức trưởng thành | Nguồn)
+**B — Chính sách VN:** Bảng văn bản (Tên | Số hiệu | Ngày | Cơ quan | Link)
+**C — Đà Nẵng:** Kết luận CÓ/CHƯA CÓ sandbox (kèm chứng cứ nguồn)
+**D — Vai trò NAPAS:** 3 kịch bản (low/medium/high risk + KPI + lộ trình)
+**E — Executive Summary:** 1-2 trang tóm tắt + đề xuất hành động
 
 ### Phase 4: REVIEW
-- Xóa nhận định không nguồn
-- Verify links
-- Format check
-
-## Câu lệnh nhanh
-
-| Yêu cầu | Thực hiện |
-|----------|-----------|
-| Nghiên cứu đầy đủ | Chạy Phase 1→4, tất cả sections |
-| Chỉ xu hướng | Phase 1 (trends) → Phase 3 (Phần A) |
-| Chỉ chính sách | Phase 1 (policy) → Phase 3 (Phần B) |
-| Chỉ Đà Nẵng | Phase 1 (danang) → Phase 3 (Phần C) |
-| Cập nhật | Chạy lại Phase 1 cho section cần update |
+- Xóa nhận định không nguồn → ghi "⚠️ Không tìm thấy nguồn"
+- Verify links hoạt động
+- Đảm bảo format Markdown chuẩn
 
 ## Checklist cuối cùng
 - [ ] Mọi nhận định có nguồn ≥ Tier 2

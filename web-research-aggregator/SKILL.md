@@ -1,9 +1,11 @@
 ---
 name: web-research-aggregator
-description: "Thu thập và tổng hợp dữ liệu từ nhiều nguồn web. Tìm kiếm đa ngôn ngữ Việt/Anh, phân loại kết quả, kiểm chứng chéo."
+description: "Thu thập dữ liệu từ nhiều nguồn web bằng python3 ~/.openclaw/skills/web-search/scripts/search.py (KHÔNG dùng Brave Search). Đa ngôn ngữ Việt/Anh."
 ---
 
 # Web Research Aggregator — Thu thập dữ liệu nghiên cứu
+
+> ⚠️ Tìm kiếm web bằng: `python3 ~/.openclaw/skills/web-search/scripts/search.py`. KHÔNG dùng Brave Search.
 
 ## Khi nào sử dụng
 - Cần thu thập thông tin từ nhiều nguồn cho một chủ đề
