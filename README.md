@@ -2,145 +2,106 @@
 
 ## Tổng quan
 
-Bộ skills nghiên cứu chuyên sâu cho OpenClaw, tập trung vào nghiên cứu **Blockchain & Chính sách Việt Nam** với khả năng kiểm chứng nguồn và chống bịa.
+Bộ skills nghiên cứu chuyên sâu cho OpenClaw, tập trung vào nghiên cứu **Blockchain & Chính sách Việt Nam** với khả năng tìm kiếm web thực sự, kiểm chứng nguồn và chống bịa.
+
+## ⚡ Cài đặt nhanh
+
+```bash
+cp -r myclaw/* ~/.openclaw/skills/
+pip install ddgs
+# Restart OpenClaw
+```
 
 ## Cấu trúc Skills
 
 ```
 myclaw/
-├── README.md                           ← Bạn đang đọc file này
-│
-├── deep-research-orchestrator/         ← 🎯 Skill điều phối trung tâm
-│   └── SKILL.md                        
-│
-├── blockchain-policy-research/         ← 📊 Skill nghiên cứu chính
-│   ├── SKILL.md                        ← Quy trình & framework nghiên cứu
-│   ├── scripts/
-│   │   └── research.py                 ← Script tự động tạo báo cáo
-│   ├── templates/
-│   │   └── report-templates.md         ← Mẫu báo cáo
-│   └── resources/
-│       └── reference-sources.md        ← Danh sách nguồn tham khảo
-│
-├── web-research-aggregator/            ← 🔍 Skill thu thập dữ liệu web
-│   └── SKILL.md                        ← Quy trình tìm kiếm đa nguồn
-│
-├── web-search/                         ← 🌐 Skill tìm kiếm web THỰC SỰ
-│   ├── SKILL.md                        ← Hướng dẫn sử dụng
+├── web-search/                    ← 🌐 CORE: Tìm kiếm web thực sự
+│   ├── SKILL.md                   ← Hướng dẫn ngắn gọn + lệnh bash
 │   └── scripts/
-│       └── search.py                   ← Script DuckDuckGo + Google Search
+│       └── search.py              ← Script tìm kiếm (Tavily/DDG/Google)
 │
-└── source-validator/                   ← ✅ Skill kiểm chứng nguồn
-    └── SKILL.md                        ← Phân loại 5 tier & validate
+├── blockchain-policy-research/    ← 📊 Skill nghiên cứu chính
+│   ├── SKILL.md                   ← Quy trình + lệnh tìm kiếm
+│   ├── scripts/research.py        ← Script tạo báo cáo
+│   ├── templates/                 ← Mẫu báo cáo (đọc on-demand)
+│   └── resources/                 ← Nguồn tham khảo
+│
+├── deep-research-orchestrator/    ← 🎯 Điều phối nghiên cứu
+│   └── SKILL.md                   ← Quy trình 4 phase
+│
+├── web-research-aggregator/       ← 🔍 Thu thập đa nguồn
+│   └── SKILL.md                   ← Batch search + cross-verify
+│
+└── source-validator/              ← ✅ Kiểm chứng nguồn
+    └── SKILL.md                   ← Hệ thống 5 tier
 ```
+
+## Kiến trúc
+
+```
+User (Telegram) → OpenClaw Gateway → AI Agent
+                                      ↓
+                              Đọc SKILL.md (ngắn gọn)
+                                      ↓
+                              Chạy scripts (search.py)
+                                      ↓
+                              Trả kết quả về Telegram
+```
+
+**Nguyên tắc thiết kế:**
+1. **SKILL.md ngắn gọn** (< 60 dòng) — vừa context window
+2. **Có lệnh bash cụ thể** — AI biết chạy gì
+3. **Scripts thực thi** — công cụ thực sự, không chỉ hướng dẫn
+4. **Modular** — dễ thêm skill mới
 
 ## Skills Chi tiết
 
-### 1. 🎯 Deep Research Orchestrator
-**Vai trò**: Skill điều phối trung tâm
-- Quản lý quy trình nghiên cứu 5 phase
-- Kết nối 3 skill chuyên biệt
-- Checklist chất lượng cuối cùng
-- Câu lệnh: `/research full`, `/research section:policy`, etc.
+### 1. 🌐 Web Search (Core)
+- Tìm kiếm internet thực sự qua `search.py`
+- Auto-chọn engine: Tavily → DuckDuckGo
+- Hỗ trợ tiếng Việt (`--region vn-vi`), tin tức, batch search
+- **Cần**: `pip install ddgs` (miễn phí)
 
 ### 2. 📊 Blockchain Policy Research
-**Vai trò**: Skill nghiên cứu chính - framework báo cáo
-- **Phần A**: Xu hướng blockchain toàn cầu + VN (trend map)
-- **Phần B**: Chính sách & văn bản pháp lý VN (policy matrix)
-- **Phần C**: Đà Nẵng sandbox analysis
-- **Phần D**: Vai trò NAPAS + kịch bản tham gia (3 mức rủi ro)
-- **Phần E**: Executive Summary
-- Quy tắc chống bịa nghiêm ngặt
+- Framework 5 phần: Xu hướng → Chính sách → Đà Nẵng → NAPAS → Summary
+- Tự động gọi web-search để tìm dữ liệu
+- Chống bịa: mọi dữ kiện phải có nguồn
 
-### 3. 🔍 Web Research Aggregator
-**Vai trò**: Thu thập dữ liệu web có hệ thống
-- Tìm kiếm đa ngôn ngữ (Việt/Anh)
-- Phân loại nguồn theo 5 tiers
-- Kiểm chứng chéo (cross-verification)
-- Từ khóa gợi ý cho mỗi chủ đề
-- Output: JSON + Markdown table
+### 3. 🎯 Deep Research Orchestrator
+- Điều phối 4 phase: Thu thập → Kiểm chứng → Viết → Review
+- Kết nối 3 skill con thành pipeline
 
-### 4. 🌐 Web Search (TÌM KIẾM WEB THỰC SỰ)
-**Vai trò**: Công cụ tìm kiếm internet - **skill quan trọng nhất cho nghiên cứu**
-- Dùng DuckDuckGo (miễn phí, không cần API key) hoặc Google Custom Search
-- Hỗ trợ tìm kiếm tiếng Việt (`--region vn-vi`)
-- Tìm text + tin tức, giới hạn thời gian
-- Batch search nhiều từ khóa cùng lúc
-- Output: text, Markdown, JSON
-- **Cần cài**: `pip install duckduckgo-search`
+### 4. 🔍 Web Research Aggregator
+- Batch search đa ngôn ngữ (VI + EN)
+- Cross-verify và phân loại nguồn
 
 ### 5. ✅ Source Validator
-**Vai trò**: Kiểm chứng & đánh giá nguồn
-- Hệ thống 5 tier (Primary → Unreliable)
-- 10-point checklist cho mỗi dữ kiện
-- Red flags detection (10 cảnh báo)
-- Bảng chứng cứ nguồn tự động
-- Xử lý thông tin mâu thuẫn
+- Phân loại nguồn 5 tier (Primary → Unreliable)
+- Red flags detection
+- Bảng chứng cứ nguồn
 
-## Cách Sử dụng
+## Cách Test qua Telegram
 
-### Cài đặt vào OpenClaw
-```bash
-# Copy toàn bộ myclaw vào skills directory
-cp -r myclaw/* ~/.openclaw/skills/
+```
+# Test web search
+Tìm kiếm web về xu hướng blockchain 2025
 
-# Hoặc symlink
-ln -s $(pwd)/myclaw/* ~/.openclaw/skills/
+# Test nghiên cứu
+Nghiên cứu chính sách blockchain Việt Nam, có trích nguồn
+
+# Test đầy đủ
+Thực hiện nghiên cứu blockchain theo quy trình deep-research-orchestrator
 ```
 
-### Chạy script tạo template báo cáo
-```bash
-cd myclaw/blockchain-policy-research/scripts
-python research.py --full --output ../../../reports
-```
+## Thêm Skill Mới
 
-### Yêu cầu nghiên cứu qua chat
-```
-@OpenClaw Hãy sử dụng skill blockchain-policy-research để:
-1. Tìm kiếm web về xu hướng blockchain 2025-2026
-2. Tổng hợp chính sách blockchain VN (có trích nguồn)
-3. Kiểm tra Đà Nẵng sandbox
-4. Đề xuất 3 kịch bản cho NAPAS
-5. Viết Executive Summary
-```
-
-## Output Mong muốn
-
-Sau khi chạy nghiên cứu đầy đủ, sẽ tạo:
-
-| File | Nội dung | Kích thước ước tính |
-|------|---------|-------------------|
-| `report.md` | Báo cáo đầy đủ consolidated | 15-25 trang |
-| `executive-summary.md` | Tóm tắt điều hành | 1-2 trang |
-| `trend-map.md` | Bản đồ xu hướng | 3-5 trang |
-| `policy-matrix.md` | Bảng chính sách VN | 5-8 trang |
-| `danang-sandbox.md` | Phân tích Đà Nẵng | 2-3 trang |
-| `napas-roadmap.md` | Lộ trình NAPAS | 5-8 trang |
-| `sources.md` | Tất cả nguồn tham khảo | 3-5 trang |
-
-## Lấy cảm hứng từ
-
-Skills trong bộ toolkit này được lấy cảm hứng từ các dự án trong Awesome Claude Skills ecosystem:
-
-- **[deep-research](https://github.com/sanjay3290/ai-skills/tree/main/skills/deep-research)** - Gemini Deep Research Agent
-- **[academic-deep-research](https://github.com/openclaw/skills/tree/main/skills/kesslerio/academic-deep-research)** - Academic research with citations
-- **[research-cog](https://github.com/openclaw/skills/tree/main/skills/nitishgargiitd/research-cog)** - CellCog #1 DeepResearch Bench
-- **[competitive-intelligence](https://github.com/openclaw/skills/tree/main/skills/shashwatgtm/competitive-intelligence-market-research)** - B2B market research
-- **[proactive-research](https://github.com/openclaw/skills/tree/main/skills/robbyczgw-cla/proactive-research)** - Topic monitoring & alerts
-- **[perplexity](https://github.com/openclaw/skills/tree/main/skills/dronnick/perplexity-bash)** - Perplexity AI search
-- **[tavily](https://github.com/openclaw/skills/tree/main/skills/arun-8687/tavily-search)** - AI-optimized web search
-- **[brave-search](https://github.com/openclaw/skills/tree/main/skills/steipete/brave-search)** - Brave Search API
-
-## Nguyên tắc Thiết kế
-
-1. **Chống bịa**: Mọi dữ kiện phải có nguồn kiểm chứng
-2. **Cấu trúc rõ**: Framework 5 phần (A-E) nhất quán
-3. **Đa ngôn ngữ**: Tìm kiếm tiếng Việt + tiếng Anh
-4. **Phân tầng**: Nguồn phân loại 5 tier
-5. **Actionable**: Đề xuất cụ thể với lộ trình 30-60-90 ngày
-6. **NAPAS-oriented**: Tối ưu cho tổ chức trung gian thanh toán
+1. Tạo folder `myclaw/ten-skill-moi/`
+2. Tạo `SKILL.md` ngắn gọn (< 60 dòng) với lệnh bash cụ thể
+3. (Optional) Thêm `scripts/tool.py`
+4. Push & deploy (xem DEPLOY.md)
 
 ---
 
-📅 Cập nhật: Tháng 2/2026
-🔬 Version: 1.0
+📅 Cập nhật: 09/02/2026
+🔧 Version: 2.0
