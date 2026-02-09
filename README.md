@@ -25,6 +25,11 @@ myclaw/
 ├── web-research-aggregator/            ← 🔍 Skill thu thập dữ liệu web
 │   └── SKILL.md                        ← Quy trình tìm kiếm đa nguồn
 │
+├── web-search/                         ← 🌐 Skill tìm kiếm web THỰC SỰ
+│   ├── SKILL.md                        ← Hướng dẫn sử dụng
+│   └── scripts/
+│       └── search.py                   ← Script DuckDuckGo + Google Search
+│
 └── source-validator/                   ← ✅ Skill kiểm chứng nguồn
     └── SKILL.md                        ← Phân loại 5 tier & validate
 ```
@@ -55,7 +60,16 @@ myclaw/
 - Từ khóa gợi ý cho mỗi chủ đề
 - Output: JSON + Markdown table
 
-### 4. ✅ Source Validator
+### 4. 🌐 Web Search (TÌM KIẾM WEB THỰC SỰ)
+**Vai trò**: Công cụ tìm kiếm internet - **skill quan trọng nhất cho nghiên cứu**
+- Dùng DuckDuckGo (miễn phí, không cần API key) hoặc Google Custom Search
+- Hỗ trợ tìm kiếm tiếng Việt (`--region vn-vi`)
+- Tìm text + tin tức, giới hạn thời gian
+- Batch search nhiều từ khóa cùng lúc
+- Output: text, Markdown, JSON
+- **Cần cài**: `pip install duckduckgo-search`
+
+### 5. ✅ Source Validator
 **Vai trò**: Kiểm chứng & đánh giá nguồn
 - Hệ thống 5 tier (Primary → Unreliable)
 - 10-point checklist cho mỗi dữ kiện

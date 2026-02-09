@@ -1,187 +1,195 @@
 # 🚀 Hướng dẫn Triển khai MyClaw Skills lên VPS
 
-## Thông tin cần biết
+## Yêu cầu
+- VPS đã cài OpenClaw
+- OpenClaw chạy qua `screen` session với lệnh `openclaw gateway run`
+- Git đã cài trên VPS
+- Python 3.8+ trên VPS
 
-### Cấu trúc thư mục OpenClaw trên VPS
-OpenClaw cài đặt skills theo 2 cách:
+## Thông tin cấu trúc
+
+OpenClaw tìm skills ở 2 vị trí:
 
 | Vị trí | Path | Ưu tiên |
 |--------|------|---------|
-| **Global** (cho toàn bộ projects) | `~/.openclaw/skills/` | Thấp |
-| **Workspace** (cho 1 project cụ thể) | `<project>/skills/` | Cao |
+| **Global** | `~/.openclaw/skills/` | Mặc định |
+| **Workspace** | `<project>/skills/` | Cao hơn |
 
-> **Khuyến nghị**: Sử dụng **Global** (`~/.openclaw/skills/`) để tất cả conversations đều dùng được.
-
----
-
-## Step-by-Step Triển khai
-
-### BƯỚC 1: Nén thư mục myclaw trên máy Windows
-
-Mở PowerShell trên máy local:
-
-```powershell
-# Di chuyên đến thư mục openclaw
-cd C:\Users\thonv\Desktop\napas\openclaw
-
-# Nén toàn bộ myclaw thành file zip
-Compress-Archive -Path .\myclaw\* -DestinationPath .\myclaw-skills.zip -Force
-
-# Kiểm tra file zip đã tạo
-dir myclaw-skills.zip
-```
+> **Khuyến nghị**: Sử dụng **Global** (`~/.openclaw/skills/`)
 
 ---
 
-### BƯỚC 2: Upload lên VPS
+## Triển khai Lần đầu (Step-by-Step)
 
-```powershell
-# SCP upload lên VPS (thay YOUR_VPS_IP và YOUR_USER cho đúng)
-scp myclaw-skills.zip YOUR_USER@YOUR_VPS_IP:/tmp/myclaw-skills.zip
-```
+### BƯỚC 1: SSH vào VPS
 
-Hoặc nếu dùng SSH key:
-```powershell
-scp -i "C:\path\to\your\key.pem" myclaw-skills.zip YOUR_USER@YOUR_VPS_IP:/tmp/myclaw-skills.zip
-```
-
----
-
-### BƯỚC 3: SSH vào VPS
-
-```powershell
+```bash
 ssh YOUR_USER@YOUR_VPS_IP
 ```
 
----
-
-### BƯỚC 4: Tạo thư mục skills (nếu chưa có)
+### BƯỚC 2: Tạo thư mục skills & Clone repo
 
 ```bash
-# Kiểm tra OpenClaw đã cài đúng chưa
-ls ~/.openclaw/
-
-# Tạo thư mục skills nếu chưa có
+# Tạo thư mục nếu chưa có
 mkdir -p ~/.openclaw/skills/
+
+# Clone repo từ GitHub
+cd /tmp
+git clone https://github.com/thonguyennapas/myclaw.git
+
+# Copy từng skill vào đúng vị trí (KHÔNG lồng thêm folder myclaw/)
+cp -r /tmp/myclaw/blockchain-policy-research ~/.openclaw/skills/
+cp -r /tmp/myclaw/deep-research-orchestrator ~/.openclaw/skills/
+cp -r /tmp/myclaw/source-validator ~/.openclaw/skills/
+cp -r /tmp/myclaw/web-research-aggregator ~/.openclaw/skills/
+cp -r /tmp/myclaw/web-search ~/.openclaw/skills/
+
+# Dọn dẹp
+rm -rf /tmp/myclaw
 ```
 
----
-
-### BƯỚC 5: Giải nén skills vào đúng vị trí
+### BƯỚC 3: Kiểm tra cấu trúc
 
 ```bash
-# Giải nén từ /tmp vào thư mục skills
-cd ~/.openclaw/skills/
-unzip /tmp/myclaw-skills.zip
-
-# Xóa file zip tạm
-rm /tmp/myclaw-skills.zip
-```
-
----
-
-### BƯỚC 6: Kiểm tra cấu trúc đã đúng
-
-```bash
-# Xem cấu trúc thư mục
 find ~/.openclaw/skills/ -name "SKILL.md" | sort
 ```
 
-**Kết quả mong muốn:**
+**Kết quả đúng:**
 ```
 /home/YOUR_USER/.openclaw/skills/blockchain-policy-research/SKILL.md
 /home/YOUR_USER/.openclaw/skills/deep-research-orchestrator/SKILL.md
 /home/YOUR_USER/.openclaw/skills/source-validator/SKILL.md
 /home/YOUR_USER/.openclaw/skills/web-research-aggregator/SKILL.md
+/home/YOUR_USER/.openclaw/skills/web-search/SKILL.md
 ```
 
-> ⚠️ **QUAN TRỌNG**: Mỗi `SKILL.md` phải nằm TRỰC TIẾP trong thư mục skill, 
-> KHÔNG phải trong subfolder `myclaw/`. Tức là path phải là:
-> `~/.openclaw/skills/blockchain-policy-research/SKILL.md` ✅
-> KHÔNG phải: `~/.openclaw/skills/myclaw/blockchain-policy-research/SKILL.md` ❌
+> ⚠️ **QUAN TRỌNG**: Mỗi `SKILL.md` phải nằm TRỰC TIẾP trong thư mục skill:
+> - `~/.openclaw/skills/blockchain-policy-research/SKILL.md` ✅
+> - `~/.openclaw/skills/myclaw/blockchain-policy-research/SKILL.md` ❌
 
-Nếu cấu trúc bị sai (có thêm folder `myclaw/`), sửa lại:
+### BƯỚC 4: Fix line endings (Windows → Linux)
+
 ```bash
-# Nếu bị lồng thêm thư mục myclaw/
-cd ~/.openclaw/skills/
-mv myclaw/* ./ 2>/dev/null
-rmdir myclaw 2>/dev/null
-# Xóa README.md ở root (chỉ giữ SKILL.md trong từng skill)
-rm -f ~/.openclaw/skills/README.md
+sudo apt install dos2unix -y
+find ~/.openclaw/skills/ -type f \( -name "*.md" -o -name "*.py" \) -exec dos2unix {} \;
 ```
 
----
-
-### BƯỚC 7: Đặt quyền truy cập
+### BƯỚC 5: Cài dependencies cho web search
 
 ```bash
-# Đảm bảo OpenClaw có thể đọc tất cả files
+pip install duckduckgo-search
+```
+
+**(Khuyến nghị) Đăng ký Tavily để có chất lượng search tốt nhất:**
+1. Vào https://app.tavily.com/sign-in → đăng ký bằng email (30 giây)
+2. Copy API key
+3. Thêm vào lệnh chạy OpenClaw (Bước 8):
+```bash
+TAVILY_API_KEY="tvly-xxxxx" LLM_PROVIDER="gemini" ... openclaw gateway run
+```
+
+### BƯỚC 6: Cấp quyền
+
+```bash
 chmod -R 755 ~/.openclaw/skills/
-
-# Nếu có scripts Python, cấp quyền thực thi
 chmod +x ~/.openclaw/skills/blockchain-policy-research/scripts/research.py
+chmod +x ~/.openclaw/skills/web-search/scripts/search.py
 ```
 
----
-
-### BƯỚC 8: Cài dependencies cho scripts (nếu cần)
+### BƯỚC 7: Test web search hoạt động
 
 ```bash
-# Script research.py chỉ dùng thư viện chuẩn Python, không cần pip install gì thêm
-# Kiểm tra Python có sẵn
-python3 --version
-
-# Test chạy script tạo template
-cd ~/.openclaw/skills/blockchain-policy-research
-python3 scripts/research.py --full --output ./reports
+cd ~/.openclaw/skills/web-search
+python3 scripts/search.py "blockchain Vietnam" --max 3
+# Phải thấy kết quả tìm kiếm từ internet
 ```
 
----
-
-### BƯỚC 9: Restart OpenClaw (nếu đang chạy)
+### BƯỚC 8: Restart OpenClaw trong screen
 
 ```bash
-# Kiểm tra OpenClaw có đang chạy không
-# (Lệnh khác nhau tùy cách bạn cài OpenClaw)
+# Xem danh sách screen sessions
+screen -ls
 
-# Nếu chạy bằng systemd:
-sudo systemctl restart openclaw
+# Attach vào session đang chạy OpenClaw
+screen -r
 
-# Nếu chạy bằng Docker:
-docker restart openclaw
+# Nhấn Ctrl+C để dừng OpenClaw
 
-# Nếu chạy bằng process:
-# Kill process cũ rồi khởi động lại
+# Chạy lại
+LLM_PROVIDER="gemini" LLM_MODEL="gemini-2.5-flash" LLM_API_KEY="YOUR_KEY" TELEGRAM_TOKEN="YOUR_TOKEN" openclaw gateway run
+
+# Nhấn Ctrl+A rồi D để detach (thoát screen mà không tắt process)
+```
+
+### BƯỚC 9: Test qua Telegram
+
+Gửi tin nhắn cho bot:
+```
+Hãy liệt kê tất cả skills bạn có
+```
+
+Hoặc test trực tiếp:
+```
+Sử dụng skill blockchain-policy-research, cho tôi xem bản đồ 10 xu hướng blockchain
 ```
 
 ---
 
-### BƯỚC 10: Kiểm tra skills đã được nhận
+## Cập nhật Skills (Lần sau)
 
-Mở Telegram bot và gửi một trong các tin nhắn test:
+Khi sửa skills trên máy Windows, push lên GitHub rồi chạy trên VPS:
 
-```
-Xin chào, hãy liệt kê tất cả skills bạn có thể sử dụng
-```
+```bash
+# Trên máy Windows (PowerShell):
+cd C:\Users\thonv\Desktop\napas\openclaw\myclaw
+git add .
+git commit -m "update: mô tả thay đổi"
+git push origin main
 
-Hoặc:
-```
-Sử dụng skill blockchain-policy-research, cho tôi xem bản đồ xu hướng blockchain
-```
+# Trên VPS (SSH):
+cd /tmp
+rm -rf myclaw
+git clone https://github.com/thonguyennapas/myclaw.git
+cp -r /tmp/myclaw/blockchain-policy-research ~/.openclaw/skills/
+cp -r /tmp/myclaw/deep-research-orchestrator ~/.openclaw/skills/
+cp -r /tmp/myclaw/source-validator ~/.openclaw/skills/
+cp -r /tmp/myclaw/web-research-aggregator ~/.openclaw/skills/
+cp -r /tmp/myclaw/web-search ~/.openclaw/skills/
+rm -rf /tmp/myclaw
+find ~/.openclaw/skills/ -type f \( -name "*.md" -o -name "*.py" \) -exec dos2unix {} \;
 
-Hoặc:
-```
-/research full
+# Restart OpenClaw trong screen
+screen -r
+# Ctrl+C → chạy lại lệnh openclaw → Ctrl+A D
 ```
 
 ---
 
-## Kiểm tra Nhanh (Troubleshooting)
+## Thêm Skill Mới (Tương lai)
+
+Khi tạo skill mới, chỉ cần:
+
+1. Tạo thư mục mới trong `myclaw/` trên máy Windows:
+   ```
+   myclaw/
+   └── ten-skill-moi/
+       └── SKILL.md
+   ```
+
+2. Push lên GitHub
+3. Trên VPS thêm 1 dòng copy:
+   ```bash
+   cp -r /tmp/myclaw/ten-skill-moi ~/.openclaw/skills/
+   ```
+
+---
+
+## Troubleshooting
 
 ### Skill không được nhận?
 
 ```bash
-# 1. Kiểm tra SKILL.md có đúng format không
+# 1. Kiểm tra SKILL.md format
 head -5 ~/.openclaw/skills/blockchain-policy-research/SKILL.md
 # Phải thấy:
 # ---
@@ -189,15 +197,14 @@ head -5 ~/.openclaw/skills/blockchain-policy-research/SKILL.md
 # description: "..."
 # ---
 
-# 2. Kiểm tra quyền file
+# 2. Kiểm tra quyền
 ls -la ~/.openclaw/skills/blockchain-policy-research/SKILL.md
 
-# 3. Kiểm tra encoding (phải là UTF-8)
+# 3. Kiểm tra encoding UTF-8
 file ~/.openclaw/skills/blockchain-policy-research/SKILL.md
 
-# 4. Kiểm tra OpenClaw logs
-# (path log tùy cách cài đặt)
-tail -50 ~/.openclaw/logs/latest.log
+# 4. Xem logs
+tail -50 ~/.openclaw/logs/latest.log 2>/dev/null
 ```
 
 ### Script Python lỗi?
@@ -207,61 +214,43 @@ tail -50 ~/.openclaw/logs/latest.log
 cd ~/.openclaw/skills/blockchain-policy-research
 python3 scripts/research.py --queries
 
-# Nếu lỗi encoding (Windows → Linux):
-# Convert line endings từ CRLF sang LF
-sudo apt install dos2unix  # Ubuntu/Debian
+# Nếu lỗi encoding
 dos2unix scripts/research.py
 ```
 
----
-
-## Cập nhật Skills sau này
-
-Khi bạn sửa skills trên máy Windows và muốn cập nhật lên VPS:
-
-```powershell
-# Trên máy Windows:
-cd C:\Users\thonv\Desktop\napas\openclaw
-Compress-Archive -Path .\myclaw\* -DestinationPath .\myclaw-skills.zip -Force
-scp myclaw-skills.zip YOUR_USER@YOUR_VPS_IP:/tmp/myclaw-skills.zip
-
-# Trên VPS:
-cd ~/.openclaw/skills/
-unzip -o /tmp/myclaw-skills.zip  # -o = overwrite
-rm /tmp/myclaw-skills.zip
-# Restart OpenClaw nếu cần
-```
-
-### Hoặc dùng Git (Khuyến nghị cho lâu dài):
+### Screen session bị mất?
 
 ```bash
-# Trên VPS, lần đầu:
-cd ~/.openclaw/skills/
-git init
-git remote add origin https://github.com/YOUR_USER/myclaw-skills.git
+# Tạo screen session mới
+screen -S openclaw
 
-# Lần sau chỉ cần:
-cd ~/.openclaw/skills/
-git pull origin main
+# Chạy OpenClaw
+LLM_PROVIDER="gemini" LLM_MODEL="gemini-2.5-flash" LLM_API_KEY="YOUR_KEY" TELEGRAM_TOKEN="YOUR_TOKEN" openclaw gateway run
+
+# Detach: Ctrl+A rồi D
+# Attach lại: screen -r openclaw
 ```
 
 ---
 
-## Tóm tắt Nhanh (TL;DR)
+## Bảo mật
 
-```powershell
-# === MÁY WINDOWS ===
-cd C:\Users\thonv\Desktop\napas\openclaw
-Compress-Archive -Path .\myclaw\* -DestinationPath .\myclaw-skills.zip -Force
-scp myclaw-skills.zip USER@VPS_IP:/tmp/
+⚠️ **KHÔNG commit API keys vào Git!**
 
-# === TRÊN VPS (SSH) ===
-mkdir -p ~/.openclaw/skills/
-cd ~/.openclaw/skills/
-unzip /tmp/myclaw-skills.zip
-# Sửa cấu trúc nếu bị lồng thêm folder myclaw/
-mv myclaw/* ./ 2>/dev/null; rmdir myclaw 2>/dev/null; rm -f README.md
-chmod -R 755 ~/.openclaw/skills/
-# Restart OpenClaw
-# Test qua Telegram bot
+Nên tạo file `.env` trên VPS:
+```bash
+# Tạo file .env
+cat > ~/.openclaw/.env << 'EOF'
+LLM_PROVIDER=gemini
+LLM_MODEL=gemini-2.5-flash
+LLM_API_KEY=your_actual_key_here
+TELEGRAM_TOKEN=your_actual_token_here
+EOF
+
+# Chạy OpenClaw với .env
+cd ~/.openclaw && source .env && openclaw gateway run
 ```
+
+---
+
+📅 Cập nhật: 09/02/2026
