@@ -115,47 +115,52 @@ def search_duckduckgo(query, max_results=10, region="wt-wt", timelimit=None,
     Tìm kiếm bằng DuckDuckGo (miễn phí, không cần API key)
     DuckDuckGo là search engine hợp pháp của Mỹ (Pennsylvania, est. 2008)
     """
+    # Hỗ trợ cả package mới (ddgs) và cũ (duckduckgo_search)
+    DDGS = None
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
     except ImportError:
-        print("❌ Chưa cài duckduckgo-search. Chạy: pip install duckduckgo-search")
-        return []
+        try:
+            from duckduckgo_search import DDGS
+        except ImportError:
+            print("❌ Chưa cài package search. Chạy: pip install ddgs")
+            return []
 
     results = []
     try:
-        with DDGS() as ddgs:
-            if search_type == "news":
-                raw = list(ddgs.news(
-                    keywords=query,
-                    region=region,
-                    timelimit=timelimit,
-                    max_results=max_results
-                ))
-                for r in raw:
-                    results.append({
-                        "title": r.get("title", ""),
-                        "url": r.get("url", ""),
-                        "snippet": r.get("body", ""),
-                        "source": r.get("source", ""),
-                        "date": r.get("date", ""),
-                        "engine": "DuckDuckGo News"
-                    })
-            else:
-                raw = list(ddgs.text(
-                    keywords=query,
-                    region=region,
-                    timelimit=timelimit,
-                    max_results=max_results
-                ))
-                for r in raw:
-                    results.append({
-                        "title": r.get("title", ""),
-                        "url": r.get("href", ""),
-                        "snippet": r.get("body", ""),
-                        "source": "",
-                        "date": "",
-                        "engine": "DuckDuckGo"
-                    })
+        ddgs = DDGS()
+        if search_type == "news":
+            raw = list(ddgs.news(
+                keywords=query,
+                region=region,
+                timelimit=timelimit,
+                max_results=max_results
+            ))
+            for r in raw:
+                results.append({
+                    "title": r.get("title", ""),
+                    "url": r.get("url", ""),
+                    "snippet": r.get("body", ""),
+                    "source": r.get("source", ""),
+                    "date": r.get("date", ""),
+                    "engine": "DuckDuckGo News"
+                })
+        else:
+            raw = list(ddgs.text(
+                keywords=query,
+                region=region,
+                timelimit=timelimit,
+                max_results=max_results
+            ))
+            for r in raw:
+                results.append({
+                    "title": r.get("title", ""),
+                    "url": r.get("href", ""),
+                    "snippet": r.get("body", ""),
+                    "source": "",
+                    "date": "",
+                    "engine": "DuckDuckGo"
+                })
     except Exception as e:
         print(f"⚠️ Lỗi DuckDuckGo: {e}")
         print("💡 Thử lại sau vài giây (rate limiting)")
@@ -466,10 +471,14 @@ Engines:
         print(f"  {'✅' if google_ok else '❌'} Google     {'— Sẵn sàng' if google_ok else '— Cần GOOGLE_API_KEY + GOOGLE_CX'}")
         
         try:
-            import duckduckgo_search
-            print(f"\n  ✅ Package duckduckgo-search: đã cài (v{duckduckgo_search.__version__})")
+            import ddgs
+            print(f"\n  ✅ Package ddgs: đã cài (v{ddgs.__version__})")
         except ImportError:
-            print(f"\n  ❌ Package duckduckgo-search: chưa cài → pip install duckduckgo-search")
+            try:
+                import duckduckgo_search
+                print(f"\n  ⚠️ Package duckduckgo-search: đã cài nhưng cũ → pip install ddgs")
+            except ImportError:
+                print(f"\n  ❌ Package search chưa cài → pip install ddgs")
         
         print(f"\n💡 Khuyến nghị: Đăng ký Tavily miễn phí tại https://app.tavily.com/sign-in")
         return

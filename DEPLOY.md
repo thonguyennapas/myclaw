@@ -77,7 +77,7 @@ find ~/.openclaw/skills/ -type f \( -name "*.md" -o -name "*.py" \) -exec dos2un
 ### BƯỚC 5: Cài dependencies cho web search
 
 ```bash
-pip install duckduckgo-search
+pip install ddgs
 ```
 
 **(Khuyến nghị) Đăng ký Tavily để có chất lượng search tốt nhất:**
