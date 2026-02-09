@@ -1,11 +1,12 @@
 ---
 name: blockchain-policy-research
-description: "Viết báo cáo nghiên cứu Blockchain & chính sách VN theo 5 phần chi tiết. Dùng search.py (KHÔNG Brave). Ghi vào 1 file ~/research/report-YYYYMMDD.md."
+description: "Viết báo cáo Blockchain/chính sách VN 5 phần. Tra cứu bằng lệnh bash python3 script. TUYỆT ĐỐI KHÔNG gọi tool web_search hay Brave Search."
 ---
 
 # Blockchain Policy Research — Viết báo cáo
 
-> ⚠️ Tìm kiếm: `python3 ~/.openclaw/skills/web-search/scripts/search.py`. KHÔNG dùng Brave Search.
+> 🚨 **TUYỆT ĐỐI KHÔNG** gọi tool web_search, Brave Search, hay built-in search.
+> 🚨 Tra cứu bằng lệnh bash: `python3 ~/.openclaw/skills/web-search/scripts/search.py`
 > 📄 Ghi TOÀN BỘ vào **1 file duy nhất**. KHÔNG tách nhiều file.
 
 ## QUY TẮC VÀNG
