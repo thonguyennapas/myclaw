@@ -25,6 +25,37 @@ if sys.platform == "win32":
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # ==============================================================================
+# AUTO-LOAD .env — OpenClaw không tự source .env khi chạy bash command
+# ==============================================================================
+
+def _load_env_file():
+    """Load .env file vào os.environ nếu biến chưa có."""
+    env_paths = [
+        Path.home() / ".openclaw" / ".env",
+        Path(__file__).resolve().parent.parent.parent / ".env",
+    ]
+    for env_path in env_paths:
+        if env_path.is_file():
+            print(f"📂 Loading .env: {env_path}", file=sys.stderr)
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if "=" not in line:
+                        continue
+                    key, _, value = line.partition("=")
+                    key = key.strip()
+                    value = value.strip().strip('"').strip("'")
+                    # Chỉ set nếu chưa có trong env (env var ưu tiên hơn file)
+                    if key not in os.environ:
+                        os.environ[key] = value
+            return
+    print("⚠️  Không tìm thấy .env file", file=sys.stderr)
+
+_load_env_file()
+
+# ==============================================================================
 # CONFIGURABLE SETTINGS — đọc từ ~/.openclaw/.env
 # ==============================================================================
 
@@ -149,12 +180,35 @@ NOISE_KEYWORDS = [
 # SEARCH ENGINE — Tavily > DuckDuckGo
 # ==============================================================================
 
+def _is_valid_key(key_value):
+    """Check if API key is real (not a placeholder)."""
+    if not key_value:
+        return False
+    placeholders = ["your_", "_here", "xxx", "placeholder", "change_me"]
+    return not any(p in key_value.lower() for p in placeholders)
+
+
+# Log search engine được chọn (1 lần duy nhất)
+_search_engine_logged = False
+
 def search_web(query, max_results=5, region="wt-wt"):
     """Tìm kiếm web — Tavily (nếu có) → DuckDuckGo"""
-    if os.environ.get("TAVILY_API_KEY"):
+    global _search_engine_logged
+
+    tavily_key = os.environ.get("TAVILY_API_KEY", "")
+    if _is_valid_key(tavily_key):
+        if not _search_engine_logged:
+            print(f"🔍 Search engine: Tavily (key: {tavily_key[:8]}...)", file=sys.stderr)
+            _search_engine_logged = True
         results = _search_tavily(query, max_results)
         if results:
             return results
+        print(f"⚠️  Tavily failed for query: {query[:50]}... → fallback DDG", file=sys.stderr)
+    else:
+        if not _search_engine_logged:
+            print("🔍 Search engine: DuckDuckGo (Tavily key not found/invalid)", file=sys.stderr)
+            _search_engine_logged = True
+
     return _search_ddg(query, max_results, region)
 
 
@@ -189,19 +243,24 @@ def _search_tavily(query, max_results=5):
                 "date": "",
             })
         return results
-    except Exception:
+    except Exception as e:
+        print(f"⚠️  Tavily error: {e}", file=sys.stderr)
         return None
 
 
 def _search_ddg(query, max_results=5, region="wt-wt"):
     DDGS = None
-    try:
-        from ddgs import DDGS
-    except ImportError:
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
         try:
-            from duckduckgo_search import DDGS
+            from ddgs import DDGS
         except ImportError:
-            return []
+            try:
+                from duckduckgo_search import DDGS
+            except ImportError:
+                print("❌ Không tìm thấy package search: pip install ddgs", file=sys.stderr)
+                return []
     results = []
     try:
         ddgs = DDGS()

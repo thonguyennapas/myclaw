@@ -150,13 +150,17 @@ if pip install --help 2>&1 | grep -q "break-system-packages"; then
     echo -e "  ${YELLOW}ℹ️  PEP 668 detected — dùng --break-system-packages${NC}"
 fi
 
-# duckduckgo-search (tên package mới, cung cấp module duckduckgo_search + ddgs CLI)
-if pip install $PIP_FLAGS duckduckgo-search 2>/dev/null; then
-    echo -e "  ${GREEN}✅ duckduckgo-search installed${NC}"
-elif pip install $PIP_FLAGS ddgs 2>/dev/null; then
-    echo -e "  ${GREEN}✅ ddgs installed (legacy)${NC}"
+# ddgs — package search mới (trước đây là duckduckgo-search, đã rename)
+# Gỡ package cũ nếu còn tồn tại để tránh conflict/warning
+if pip show duckduckgo-search &>/dev/null; then
+    pip uninstall -y duckduckgo-search $PIP_FLAGS 2>/dev/null || true
+    echo -e "  ${YELLOW}🗑️  Gỡ package cũ: duckduckgo-search${NC}"
+fi
+
+if pip install $PIP_FLAGS ddgs 2>/dev/null; then
+    echo -e "  ${GREEN}✅ ddgs installed${NC}"
 else
-    echo -e "  ${RED}❌ Không cài được search package — thử: pip3 install --break-system-packages duckduckgo-search${NC}"
+    echo -e "  ${RED}❌ Không cài được ddgs — thử: pip3 install $PIP_FLAGS ddgs${NC}"
 fi
 
 # requests — dùng cho extract URL content

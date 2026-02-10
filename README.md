@@ -116,7 +116,7 @@ User ──┬── Telegram ──┐        │
 **`deploy.sh` tự động:**
 - 🗑️ Dọn skill cũ không còn trong danh sách
 - 📦 Copy skills mới + fix CRLF + set permissions
-- 📥 Cài `duckduckgo-search`, `requests` (auto-detect PEP 668)
+- 📥 Cài `ddgs`, `requests` (auto-detect PEP 668)
 - 📄 Copy `.env.example` vào `~/.openclaw/` làm template
 
 ## Skills Chi tiết

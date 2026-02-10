@@ -78,7 +78,7 @@ Script tự động:
 - 🗑️ Dọn skill cũ không còn trong danh sách (tránh xung đột sau refactor)
 - 📦 Copy skills mới vào `~/.openclaw/skills/`
 - 🔧 Fix line endings (CRLF → LF) + set permissions
-- 📥 Cài dependencies (`duckduckgo-search`, `requests`) — auto-detect PEP 668
+- 📥 Cài dependencies (`ddgs`, `requests`) — auto-detect PEP 668
 - 📄 Copy `.env.example` vào `~/.openclaw/` để luôn có template tham khảo
 
 ### BƯỚC 5: Kiểm tra sức khỏe
@@ -248,7 +248,7 @@ wc -l ~/.openclaw/skills/*/SKILL.md
 ```bash
 # Ubuntu 24.04 / Python 3.12+ chặn pip install system-wide
 # deploy.sh đã tự xử lý, nhưng nếu cần thủ công:
-pip install --break-system-packages duckduckgo-search requests
+pip install --break-system-packages ddgs requests
 ```
 
 ### Gateway không start?
