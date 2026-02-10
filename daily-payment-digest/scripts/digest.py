@@ -154,16 +154,27 @@ SEARCH_CATEGORIES = [
         "icon": "🇻🇳",
         "name": "Thanh toán Việt Nam",
         "queries": [
-            ("NAPAS thanh toán liên ngân hàng cập nhật", "vn-vi"),
-            ("NHNN chính sách thanh toán không dùng tiền mặt", "vn-vi"),
-            ("VNPay MoMo ZaloPay ví điện tử tin mới", "vn-vi"),
+            ("NAPAS thanh toán liên ngân hàng Việt Nam cập nhật", "vn-vi"),
+            ("NHNN Ngân hàng Nhà nước chính sách thanh toán không dùng tiền mặt", "vn-vi"),
+            ("VNPay MoMo ZaloPay ví điện tử Việt Nam tin mới", "vn-vi"),
             ("QR code thanh toán ngân hàng Việt Nam", "vn-vi"),
-            ("fintech công nghệ thanh toán Việt Nam 2026", "vn-vi"),
+            ("fintech công nghệ thanh toán Việt Nam", "vn-vi"),
+            ("Vietnam digital payment banking fintech news", "vn-vi"),
         ],
         "top_n": 5,
         "keywords": ["thanh toán", "ngân hàng", "payment", "NAPAS", "NHNN",
                      "VNPay", "MoMo", "ZaloPay", "QR", "ví điện tử",
                      "fintech", "chuyển tiền", "thẻ", "ATM", "tín dụng"],
+        # Bài viết PHẢI chứa ít nhất 1 từ khóa bắt buộc liên quan VN
+        "required_keywords": [
+            "việt nam", "vietnam", "vn", "napas", "nhnn",
+            "vnpay", "momo", "zalopay", "vietcombank", "vietinbank",
+            "techcombank", "mbbank", "mb bank", "agribank", "bidv",
+            "tpbank", "vpbank", "acb", "sacombank", "hdbank",
+            "ngân hàng", "ví điện tử", "thanh toán", "chuyển tiền",
+            "viettel", "viettel money", "vietqr", "smartpay",
+            "hà nội", "hanoi", "hồ chí minh", "saigon", "đồng",
+        ],
     },
 ]
 
@@ -200,7 +211,7 @@ def search_web(query, max_results=5, region="wt-wt"):
         if not _search_engine_logged:
             print(f"🔍 Search engine: Tavily (key: {tavily_key[:8]}...)", file=sys.stderr)
             _search_engine_logged = True
-        results = _search_tavily(query, max_results)
+        results = _search_tavily(query, max_results, region=region)
         if results:
             return results
         print(f"⚠️  Tavily failed for query: {query[:50]}... → fallback DDG", file=sys.stderr)
@@ -212,19 +223,39 @@ def search_web(query, max_results=5, region="wt-wt"):
     return _search_ddg(query, max_results, region)
 
 
-def _search_tavily(query, max_results=5):
+def _search_tavily(query, max_results=5, region="wt-wt"):
     api_key = os.environ.get("TAVILY_API_KEY")
     if not api_key:
         return None
     try:
-        payload = json.dumps({
+        # Khi region là vn-vi, thêm context Việt Nam vào query
+        search_query = query
+        include_domains = []
+        if region == "vn-vi":
+            # Nếu query chưa có "Việt Nam" / "Vietnam", thêm vào
+            if "việt nam" not in query.lower() and "vietnam" not in query.lower():
+                search_query = f"{query} Việt Nam"
+            # Ưu tiên nguồn tin VN
+            include_domains = [
+                "vnexpress.net", "tuoitre.vn", "thanhnien.vn",
+                "baomoi.com", "cafef.vn", "dantri.com.vn",
+                "vietnamnet.vn", "nhandan.vn", "vneconomy.vn",
+                "tinnhanhchungkhoan.vn", "sbv.gov.vn",
+                "vietnambiz.vn", "vietstock.vn",
+            ]
+
+        payload_dict = {
             "api_key": api_key,
-            "query": query,
+            "query": search_query,
             "search_depth": "basic",
             "topic": "news",
             "max_results": max_results,
             "include_answer": False,
-        }).encode("utf-8")
+        }
+        if include_domains:
+            payload_dict["include_domains"] = include_domains
+
+        payload = json.dumps(payload_dict).encode("utf-8")
         req = urllib.request.Request(
             "https://api.tavily.com/search",
             data=payload,
@@ -341,7 +372,11 @@ def build_digest(date_str=None):
             time.sleep(DIGEST_SEARCH_DELAY)
 
         # Lọc bỏ bài không liên quan
-        articles = _filter_articles(articles, cat.get("keywords", []))
+        articles = _filter_articles(
+            articles,
+            cat.get("keywords", []),
+            required_keywords=cat.get("required_keywords", []),
+        )
 
         # Giới hạn top N
         top_n = cat.get("top_n", DIGEST_MAX_RESULTS)
@@ -359,13 +394,21 @@ def build_digest(date_str=None):
     return output
 
 
-def _filter_articles(articles, relevance_keywords):
-    """Lọc bài viết: loại noise, ưu tiên bài liên quan"""
+def _filter_articles(articles, relevance_keywords, required_keywords=None):
+    """Lọc bài viết: loại noise, ưu tiên bài liên quan
+    
+    Args:
+        required_keywords: nếu có, bài viết PHẢI chứa ít nhất 1 từ khóa
+                          trong danh sách này mới được giữ lại.
+    """
     filtered = []
     for a in articles:
         title = a.get("title", "").strip()
         snippet = a.get("snippet", "").strip()
+        url = a.get("url", "").lower()
+        source = a.get("source", "").lower()
         text = f"{title} {snippet}".lower()
+        full_text = f"{text} {url} {source}"
 
         # Bỏ title quá ngắn
         if len(title) < 15:
@@ -379,6 +422,16 @@ def _filter_articles(articles, relevance_keywords):
                 break
         if is_noise:
             continue
+
+        # Kiểm tra required keywords (bắt buộc có ít nhất 1)
+        if required_keywords:
+            has_required = False
+            for rk in required_keywords:
+                if rk.lower() in full_text:
+                    has_required = True
+                    break
+            if not has_required:
+                continue
 
         # Tính relevance score
         score = 0
