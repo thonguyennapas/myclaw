@@ -113,6 +113,12 @@ User ──┬── Telegram ──┐        │
 3. **Có lệnh bash cụ thể** → AI biết chạy gì
 4. **1 task = 1 folder** → gọn gàng, dễ quản lý
 
+**`deploy.sh` tự động:**
+- 🗑️ Dọn skill cũ không còn trong danh sách
+- 📦 Copy skills mới + fix CRLF + set permissions
+- 📥 Cài `duckduckgo-search`, `requests` (auto-detect PEP 668)
+- 📄 Copy `.env.example` vào `~/.openclaw/` làm template
+
 ## Skills Chi tiết
 
 ### 1. 🌐 Web Search (Core Utility)
@@ -158,4 +164,4 @@ bash scripts/start.sh --screen
 ---
 
 📅 Cập nhật: 10/02/2026
-🔧 Version: 4.0 — Refactored: gộp 4 research skills → 1 folder `deep-research`
+🔧 Version: 4.1 — Auto cleanup, PEP 668 support, .env.example auto-copy

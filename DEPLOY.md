@@ -1,9 +1,11 @@
 # 🚀 Hướng dẫn Triển khai MyClaw Skills lên VPS
 
 ## Yêu cầu
-- VPS Ubuntu đã cài OpenClaw
-- Git, Python 3.8+, screen
+- VPS Ubuntu (22.04 / 24.04) đã cài OpenClaw
+- Git, Python 3.10+, screen
 - SSH access
+
+> 💡 **Python 3.12+** (Ubuntu 24.04): `deploy.sh` tự xử lý PEP 668 (`--break-system-packages`)
 
 ---
 
@@ -73,10 +75,11 @@ bash scripts/deploy.sh
 ```
 
 Script tự động:
-- Copy skills vào `~/.openclaw/skills/`
-- Fix line endings (CRLF → LF)
-- Set permissions
-- Cài dependencies
+- 🗑️ Dọn skill cũ không còn trong danh sách (tránh xung đột sau refactor)
+- 📦 Copy skills mới vào `~/.openclaw/skills/`
+- 🔧 Fix line endings (CRLF → LF) + set permissions
+- 📥 Cài dependencies (`duckduckgo-search`, `requests`) — auto-detect PEP 668
+- 📄 Copy `.env.example` vào `~/.openclaw/` để luôn có template tham khảo
 
 ### BƯỚC 5: Kiểm tra sức khỏe
 
@@ -86,7 +89,7 @@ bash scripts/health-check.sh
 
 Kết quả mong đợi:
 ```
-📊 Results: 15 pass | 0 warn | 0 fail
+📊 Results: 10 pass | 0 warn | 0 fail
 🎉 Everything looks great!
 ```
 
@@ -240,6 +243,14 @@ wc -l ~/.openclaw/skills/*/SKILL.md
 | Line endings CRLF | `dos2unix ~/.openclaw/skills/*/SKILL.md` |
 | Thiếu permissions | `chmod +x ~/.openclaw/skills/*/scripts/*.py` |
 
+### pip install thất bại (PEP 668)?
+
+```bash
+# Ubuntu 24.04 / Python 3.12+ chặn pip install system-wide
+# deploy.sh đã tự xử lý, nhưng nếu cần thủ công:
+pip install --break-system-packages duckduckgo-search requests
+```
+
 ### Gateway không start?
 
 ```bash
@@ -268,4 +279,4 @@ bash scripts/start.sh --screen
 ---
 
 📅 Cập nhật: 10/02/2026
-🔧 Version: 4.0 — Refactored skills, .env-based config, deployment scripts
+🔧 Version: 4.1 — Auto cleanup old skills, PEP 668 support, .env.example auto-copy
