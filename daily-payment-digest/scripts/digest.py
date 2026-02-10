@@ -25,6 +25,20 @@ if sys.platform == "win32":
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # ==============================================================================
+# CONFIGURABLE SETTINGS — đọc từ ~/.openclaw/.env
+# ==============================================================================
+
+DIGEST_SEARCH_DELAY = float(os.environ.get("DIGEST_SEARCH_DELAY", "0.8"))
+DIGEST_TIMELIMIT = os.environ.get("DIGEST_TIMELIMIT", "w")       # d=ngày, w=tuần, m=tháng
+DIGEST_MAX_RESULTS = int(os.environ.get("DIGEST_MAX_RESULTS", "5"))
+DIGEST_SNIPPET_LENGTH = int(os.environ.get("DIGEST_SNIPPET_LENGTH", "150"))
+DIGEST_OUTPUT_DIR = os.environ.get("DIGEST_OUTPUT_DIR", str(Path.home() / "digests"))
+
+# Expand ~ nếu có
+if DIGEST_OUTPUT_DIR.startswith("~"):
+    DIGEST_OUTPUT_DIR = os.path.expanduser(DIGEST_OUTPUT_DIR)
+
+# ==============================================================================
 # SEARCH CATEGORIES
 # ==============================================================================
 
@@ -191,7 +205,7 @@ def _search_ddg(query, max_results=5, region="wt-wt"):
     results = []
     try:
         ddgs = DDGS()
-        raw = list(ddgs.news(query, region=region, timelimit="w", max_results=max_results))
+        raw = list(ddgs.news(query, region=region, timelimit=DIGEST_TIMELIMIT, max_results=max_results))
         for r in raw:
             results.append({
                 "title": r.get("title", "").strip(),
@@ -204,7 +218,7 @@ def _search_ddg(query, max_results=5, region="wt-wt"):
         time.sleep(1)
         try:
             ddgs = DDGS()
-            raw = list(ddgs.text(query, region=region, timelimit="w", max_results=max_results))
+            raw = list(ddgs.text(query, region=region, timelimit=DIGEST_TIMELIMIT, max_results=max_results))
             for r in raw:
                 results.append({
                     "title": r.get("title", "").strip(),
@@ -258,19 +272,20 @@ def build_digest(date_str=None):
         articles = []
 
         for query, region in cat["queries"]:
-            results = search_web(query, max_results=cat.get("top_n", 5) + 3, region=region)
+            effective_top_n = cat.get("top_n", DIGEST_MAX_RESULTS)
+            results = search_web(query, max_results=effective_top_n + 3, region=region)
             for r in results:
                 url = r.get("url", "")
                 if url and url not in global_seen_urls:
                     global_seen_urls.add(url)
                     articles.append(r)
-            time.sleep(0.8)
+            time.sleep(DIGEST_SEARCH_DELAY)
 
         # Lọc bỏ bài không liên quan
         articles = _filter_articles(articles, cat.get("keywords", []))
 
         # Giới hạn top N
-        top_n = cat.get("top_n", 5)
+        top_n = cat.get("top_n", DIGEST_MAX_RESULTS)
         articles = articles[:top_n]
         total_articles += len(articles)
 
@@ -358,8 +373,8 @@ def _format_telegram(sections, today_display, total_articles):
             snippet = article.get("snippet", "")
 
             # Rút gọn snippet
-            if len(snippet) > 150:
-                snippet = snippet[:147] + "..."
+            if len(snippet) > DIGEST_SNIPPET_LENGTH:
+                snippet = snippet[:DIGEST_SNIPPET_LENGTH - 3] + "..."
 
             # Số thứ tự với emoji
             num_emoji = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
@@ -389,7 +404,8 @@ def _format_telegram(sections, today_display, total_articles):
     lines.append("💡 𝗚𝗛𝗜 𝗖𝗛𝗨́")
     lines.append("• Tin tổng hợp tự động từ nhiều nguồn quốc tế & VN")
     lines.append("• Click link để đọc chi tiết bài gốc")
-    lines.append("• Dữ liệu: 7 ngày gần nhất")
+    timelimit_labels = {"d": "1 ngày", "w": "7 ngày", "m": "30 ngày"}
+    lines.append(f"• Dữ liệu: {timelimit_labels.get(DIGEST_TIMELIMIT, DIGEST_TIMELIMIT)} gần nhất")
     lines.append(f"• ⏰ Cập nhật lúc {datetime.now().strftime('%H:%M')} — NAPAS Research Bot")
     lines.append("━━━━━━━━━━━━━━━━━━━━━━━━")
 
@@ -419,7 +435,7 @@ def main():
     if args.output:
         out_path = Path(args.output)
     else:
-        out_dir = Path.home() / "digests"
+        out_dir = Path(DIGEST_OUTPUT_DIR)
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / f"digest-{today}.md"
 

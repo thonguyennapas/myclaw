@@ -1,53 +1,32 @@
 # 🚀 Hướng dẫn Triển khai MyClaw Skills lên VPS
 
 ## Yêu cầu
-- VPS đã cài OpenClaw
-- OpenClaw chạy qua `screen` session với lệnh `openclaw gateway run`
-- Git đã cài trên VPS
-- Python 3.8+ trên VPS
-
-## Thông tin cấu trúc
-
-OpenClaw tìm skills ở 2 vị trí:
-
-| Vị trí | Path | Ưu tiên |
-|--------|------|---------|
-| **Global** | `~/.openclaw/skills/` | Mặc định |
-| **Workspace** | `<project>/skills/` | Cao hơn |
-
-> **Khuyến nghị**: Sử dụng **Global** (`~/.openclaw/skills/`)
+- VPS Ubuntu đã cài OpenClaw
+- Git, Python 3.8+, screen
+- SSH access
 
 ---
 
-## ⚡ Triển khai Nhanh (Copy-Paste)
+## ⚡ Triển khai Nhanh (Lần đầu)
 
 ```bash
-# 1. Clone & copy skills
+# 1. Clone repo
 cd /tmp && rm -rf myclaw
 git clone https://github.com/thonguyennapas/myclaw.git
-cp -r /tmp/myclaw/blockchain-policy-research ~/.openclaw/skills/
-cp -r /tmp/myclaw/deep-research-orchestrator ~/.openclaw/skills/
-cp -r /tmp/myclaw/source-validator ~/.openclaw/skills/
-cp -r /tmp/myclaw/web-research-aggregator ~/.openclaw/skills/
-cp -r /tmp/myclaw/web-search ~/.openclaw/skills/
-cp -r /tmp/myclaw/daily-payment-digest ~/.openclaw/skills/
-rm -rf /tmp/myclaw
 
-# 2. Fix line endings & permissions
-find ~/.openclaw/skills/ -type f \( -name "*.md" -o -name "*.py" \) -exec dos2unix {} \;
-chmod -R 755 ~/.openclaw/skills/
-chmod +x ~/.openclaw/skills/web-search/scripts/search.py
-chmod +x ~/.openclaw/skills/blockchain-policy-research/scripts/research.py
+# 2. Deploy tất cả (skills + .env setup)
+cd /tmp/myclaw && bash scripts/deploy.sh --setup-env
 
-# 3. Cài dependencies
-pip install ddgs
+# 3. Start gateway
+bash scripts/start.sh --screen
 
-# 4. Test web search
-cd ~/.openclaw/skills/web-search && python3 scripts/search.py "blockchain Vietnam" --max 3
+# 4. Verify
+bash scripts/health-check.sh
+```
 
-# 5. Restart OpenClaw (trong screen session)
-screen -r
-# Ctrl+C → chạy lại lệnh bên dưới → Ctrl+A D
+Xong! Test qua Telegram:
+```
+Tìm kiếm web về xu hướng blockchain 2025
 ```
 
 ---
@@ -60,155 +39,142 @@ screen -r
 ssh YOUR_USER@YOUR_VPS_IP
 ```
 
-### BƯỚC 2: Clone repo & Copy skills
+### BƯỚC 2: Clone repo
 
 ```bash
-cd /tmp
-rm -rf myclaw
+cd /tmp && rm -rf myclaw
 git clone https://github.com/thonguyennapas/myclaw.git
-
-# Copy từng skill vào đúng vị trí
-cp -r /tmp/myclaw/blockchain-policy-research ~/.openclaw/skills/
-cp -r /tmp/myclaw/deep-research-orchestrator ~/.openclaw/skills/
-cp -r /tmp/myclaw/source-validator ~/.openclaw/skills/
-cp -r /tmp/myclaw/web-research-aggregator ~/.openclaw/skills/
-cp -r /tmp/myclaw/web-search ~/.openclaw/skills/
-cp -r /tmp/myclaw/daily-payment-digest ~/.openclaw/skills/
-
-rm -rf /tmp/myclaw
 ```
 
-> 📰 **Daily Payment Digest**: Xem hướng dẫn chi tiết tại `daily-payment-digest/DEPLOY.md`
-> - **Option 1 (Chủ động)**: Nhắn Telegram "Tổng hợp tin tức thanh toán" → chạy ngay
-> - **Option 2 (Cron)**: `bash ~/.openclaw/skills/daily-payment-digest/scripts/cron_setup.sh`
-
-### BƯỚC 3: Kiểm tra cấu trúc
+### BƯỚC 3: Tạo file `.env`
 
 ```bash
-find ~/.openclaw/skills/ -name "SKILL.md" | sort
+# Copy template → điền giá trị thật
+cp /tmp/myclaw/.env.example ~/.openclaw/.env
+nano ~/.openclaw/.env
 ```
 
-**Kết quả đúng:**
-```
-/home/YOUR_USER/.openclaw/skills/blockchain-policy-research/SKILL.md
-/home/YOUR_USER/.openclaw/skills/deep-research-orchestrator/SKILL.md
-/home/YOUR_USER/.openclaw/skills/source-validator/SKILL.md
-/home/YOUR_USER/.openclaw/skills/web-research-aggregator/SKILL.md
-/home/YOUR_USER/.openclaw/skills/web-search/SKILL.md
-```
+**Các giá trị cần điền:**
 
-> ⚠️ **QUAN TRỌNG**: Mỗi `SKILL.md` phải nằm TRỰC TIẾP trong thư mục skill:
-> - `~/.openclaw/skills/blockchain-policy-research/SKILL.md` ✅
-> - `~/.openclaw/skills/myclaw/blockchain-policy-research/SKILL.md` ❌
+| Variable | Mô tả | Cách lấy |
+|-|-|-|
+| `LLM_API_KEY` | Gemini API Key | [Google AI Studio](https://aistudio.google.com/) |
+| `TELEGRAM_TOKEN` | Bot token | [BotFather](https://t.me/BotFather) |
+| `TAVILY_API_KEY` | Search API (optional) | [Tavily](https://app.tavily.com/sign-in) |
+| `TELEGRAM_CHAT_ID` | Cho cron job (optional) | Nhắn bot → [getUpdates](https://api.telegram.org/bot<TOKEN>/getUpdates) |
 
-### BƯỚC 4: Fix line endings (Windows → Linux)
+⚠️ **KHÔNG BAO GIỜ commit `.env` lên Git!** File `.gitignore` đã bảo vệ.
+
+### BƯỚC 4: Deploy skills
 
 ```bash
-sudo apt install dos2unix -y
-find ~/.openclaw/skills/ -type f \( -name "*.md" -o -name "*.py" \) -exec dos2unix {} \;
+cd /tmp/myclaw
+bash scripts/deploy.sh
 ```
 
-### BƯỚC 5: Cài dependencies
+Script tự động:
+- Copy skills vào `~/.openclaw/skills/`
+- Fix line endings (CRLF → LF)
+- Set permissions
+- Cài dependencies
+
+### BƯỚC 5: Kiểm tra sức khỏe
 
 ```bash
-pip install ddgs
+bash scripts/health-check.sh
 ```
 
-**(Khuyến nghị) Đăng ký Tavily để có chất lượng search tốt nhất:**
-1. Vào https://app.tavily.com/sign-in → đăng ký bằng email (30 giây)
-2. Copy API key
-3. Thêm vào lệnh chạy OpenClaw (Bước 8)
+Kết quả mong đợi:
+```
+📊 Results: 15 pass | 0 warn | 0 fail
+🎉 Everything looks great!
+```
 
-### BƯỚC 6: Cấp quyền
+### BƯỚC 6: Start gateway
 
 ```bash
-chmod -R 755 ~/.openclaw/skills/
-chmod +x ~/.openclaw/skills/blockchain-policy-research/scripts/research.py
-chmod +x ~/.openclaw/skills/web-search/scripts/search.py
+# Chạy trong screen (khuyên dùng)
+bash scripts/start.sh --screen
+
+# Hoặc chạy foreground
+bash scripts/start.sh
 ```
 
-### BƯỚC 7: Test web search
-
+Kiểm tra:
 ```bash
-cd ~/.openclaw/skills/web-search
-python3 scripts/search.py "blockchain Vietnam" --max 3
-# Phải thấy kết quả tìm kiếm từ internet
+screen -r openclaw    # Xem logs
+# Ctrl+A → D          # Detach
 ```
 
-### BƯỚC 8: Restart OpenClaw trong screen
-
-```bash
-screen -ls
-screen -r
-
-# Nhấn Ctrl+C để dừng OpenClaw
-
-# Chạy lại (thêm TAVILY_API_KEY nếu đã đăng ký)
-TAVILY_API_KEY="tvly-xxxxx" LLM_PROVIDER="gemini" LLM_MODEL="gemini-2.5-flash" LLM_API_KEY="YOUR_KEY" TELEGRAM_TOKEN="YOUR_TOKEN" openclaw gateway run
-
-# Nhấn Ctrl+A rồi D để detach
-```
-
-### BƯỚC 9: Test qua Telegram
+### BƯỚC 7: Test qua Telegram
 
 ```
 Tìm kiếm web về xu hướng blockchain 2025
 ```
 
-Hoặc test research:
 ```
-Nghiên cứu chính sách blockchain Việt Nam, tìm kiếm web và trích nguồn
+Nghiên cứu chính sách blockchain Việt Nam, có trích nguồn
+```
+
+```
+Tổng hợp tin tức thanh toán hôm nay
 ```
 
 ---
 
-## Cập nhật Skills (Lần sau)
+## 🔄 Cập nhật Skills (Lần sau)
 
+### Trên máy Windows (push):
 ```bash
-# Trên máy Windows (PowerShell):
 cd C:\Users\thonv\Desktop\napas\openclaw\myclaw
 git add .
 git commit -m "update: mô tả thay đổi"
 git push origin main
+```
 
-# Trên VPS (SSH):
+### Trên VPS (pull & deploy):
+```bash
 cd /tmp && rm -rf myclaw
 git clone https://github.com/thonguyennapas/myclaw.git
-cp -r /tmp/myclaw/blockchain-policy-research ~/.openclaw/skills/
-cp -r /tmp/myclaw/deep-research-orchestrator ~/.openclaw/skills/
-cp -r /tmp/myclaw/source-validator ~/.openclaw/skills/
-cp -r /tmp/myclaw/web-research-aggregator ~/.openclaw/skills/
-cp -r /tmp/myclaw/web-search ~/.openclaw/skills/
-cp -r /tmp/myclaw/daily-payment-digest ~/.openclaw/skills/
-rm -rf /tmp/myclaw
-find ~/.openclaw/skills/ -type f \( -name "*.md" -o -name "*.py" \) -exec dos2unix {} \;
+cd /tmp/myclaw && bash scripts/deploy.sh
 
-# Restart OpenClaw
-screen -r
-# Ctrl+C → chạy lại lệnh openclaw → Ctrl+A D
+# Restart gateway
+bash scripts/start.sh --screen
 ```
+
+> **`.env` không bị ghi đè** vì deploy.sh chỉ ghi nếu chưa tồn tại.
 
 ---
 
-## Thêm Skill Mới (Tương lai)
+## ⏰ Cron Job — Bản tin tự động 8h sáng
 
-Khi tạo skill mới, tuân theo mẫu:
+```bash
+# Setup cron
+bash ~/.openclaw/skills/daily-payment-digest/scripts/cron_setup.sh
+
+# Hoặc thủ công
+crontab -e
+# Thêm: 0 8 * * * ~/.openclaw/skills/daily-payment-digest/scripts/cron_trigger.sh >> ~/.openclaw/logs/cron-digest.log 2>&1
+```
+
+> Yêu cầu: `TELEGRAM_CHAT_ID` đã set trong `.env`
+
+---
+
+## ➕ Thêm Skill Mới
+
+### 1. Tạo folder + SKILL.md
 
 ```
 myclaw/
 └── ten-skill-moi/
-    ├── SKILL.md           ← NGẮN GỌN (< 60 dòng)
+    ├── SKILL.md           ← NGẮN GỌN (< 100 dòng)
     └── scripts/           ← (optional) Scripts thực thi
         └── tool.py
 ```
 
-### Yêu cầu cho SKILL.md mới:
-1. **Frontmatter ngắn**: `name` + `description` (1-2 câu)
-2. **"Khi nào sử dụng"**: 3-5 bullet points
-3. **"Cách thực hiện"**: Có lệnh `bash` cụ thể
-4. **Tổng dưới 60 dòng** — quá dài sẽ bị context overflow
+### 2. Template SKILL.md:
 
-### Ví dụ SKILL.md tối thiểu:
 ```yaml
 ---
 name: ten-skill-moi
@@ -222,73 +188,84 @@ description: "Mô tả ngắn gọn skill làm gì. 1-2 câu."
 - Điều kiện 2
 
 ## Cách thực hiện
-\```bash
+```bash
 python3 ~/.openclaw/skills/ten-skill-moi/scripts/tool.py "input"
-\```
+```
+```
+
+### 3. Đăng ký trong deploy.sh
+
+Thêm tên skill vào array `SKILLS` trong `scripts/deploy.sh`:
+```bash
+SKILLS=(
+    ...
+    "ten-skill-moi"    # ← thêm dòng này
+)
+```
+
+### 4. Deploy
+```bash
+git push origin main
+# Trên VPS:
+cd /tmp/myclaw && bash scripts/deploy.sh
+bash scripts/start.sh --screen
 ```
 
 ---
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
-### Skill không hoạt động trên Telegram?
-
-**Nguyên nhân phổ biến:**
-1. SKILL.md quá dài (> 100 dòng) → context overflow
-2. Không có lệnh bash/python cụ thể → AI không biết chạy gì
-3. Description trong frontmatter quá mơ hồ → AI không match skill
-
-**Cách fix:**
+### Quick fix:
 ```bash
-# 1. Kiểm tra kích thước SKILL.md
-wc -l ~/.openclaw/skills/*/SKILL.md
+# 1. Chạy health check
+bash scripts/health-check.sh
 
-# 2. Kiểm tra frontmatter
-head -5 ~/.openclaw/skills/blockchain-policy-research/SKILL.md
+# 2. Kiểm tra logs
+screen -r openclaw
 
-# 3. Test script trực tiếp
+# 3. Test search trực tiếp
 python3 ~/.openclaw/skills/web-search/scripts/search.py "test" --max 2
 
-# 4. Xem logs
-tail -100 ~/.openclaw/logs/latest.log 2>/dev/null
+# 4. Xem SKILL.md
+wc -l ~/.openclaw/skills/*/SKILL.md
 ```
 
-### Script Python lỗi?
+### Skill không hoạt động?
+
+| Nguyên nhân | Cách fix |
+|-|-|
+| SKILL.md quá dài (> 120 dòng) | Rút gọn < 100 dòng |
+| Không có lệnh bash | Thêm block ```bash``` cụ thể |
+| Description mơ hồ | Sửa frontmatter description |
+| Line endings CRLF | `dos2unix ~/.openclaw/skills/*/SKILL.md` |
+| Thiếu permissions | `chmod +x ~/.openclaw/skills/*/scripts/*.py` |
+
+### Gateway không start?
 
 ```bash
-cd ~/.openclaw/skills/web-search
-python3 scripts/search.py --status
-dos2unix scripts/search.py
-```
+# Check .env
+cat ~/.openclaw/.env
 
-### Screen session bị mất?
+# Check OpenClaw
+openclaw --version
+openclaw gateway status
 
-```bash
-screen -S openclaw
-LLM_PROVIDER="gemini" LLM_MODEL="gemini-2.5-flash" LLM_API_KEY="YOUR_KEY" TELEGRAM_TOKEN="YOUR_TOKEN" openclaw gateway run
-# Detach: Ctrl+A rồi D
-# Attach lại: screen -r openclaw
+# Restart
+bash scripts/start.sh --screen
 ```
 
 ---
 
-## Bảo mật
+## 🔐 Bảo mật
 
-⚠️ **KHÔNG commit API keys vào Git!**
-
-```bash
-cat > ~/.openclaw/.env << 'EOF'
-LLM_PROVIDER=gemini
-LLM_MODEL=gemini-2.5-flash
-LLM_API_KEY=your_key
-TELEGRAM_TOKEN=your_token
-TAVILY_API_KEY=tvly-xxxxx
-EOF
-
-cd ~/.openclaw && source .env && openclaw gateway run
-```
+| ✅ Đúng | ❌ Sai |
+|-|-|
+| Dùng `.env` file | Gõ key trên command line |
+| `.gitignore` chặn `.env` | Commit `.env` lên Git |
+| Copy `.env.example` → `.env` | Hardcode key trong script |
+| `start.sh` tự load `.env` | Export key vào `.bashrc` |
 
 ---
 
-📅 Cập nhật: 09/02/2026
-🔧 Version: 2.0 — Refactored skills for OpenClaw compatibility
+📅 Cập nhật: 10/02/2026
+🔧 Version: 4.0 — Refactored skills, .env-based config, deployment scripts

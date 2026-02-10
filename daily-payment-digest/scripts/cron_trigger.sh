@@ -5,33 +5,39 @@
 # Script này GỬI 1 TIN NHẮN đến OpenClaw Telegram Bot mỗi sáng 8h
 # để trigger skill daily-payment-digest.
 #
-# ĐÂY LÀ CÁCH ĐÚNG: dùng OpenClaw như mọi skill khác.
-# Không chạy digest riêng, mà gửi yêu cầu qua Telegram Bot.
+# Config: tất cả đọc từ ~/.openclaw/.env (unified config)
 # ==============================================================================
 
-# ── Config ──
-# Set trước khi chạy hoặc qua env
-BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
-CHAT_ID="${DIGEST_CHAT_ID:-${TELEGRAM_CHAT_ID:-}}"
+# ── Load unified .env ──
+ENV_FILE="$HOME/.openclaw/.env"
 
-# Load env nếu có
-[ -f "$HOME/.openclaw/.env" ] && source "$HOME/.openclaw/.env"
-[ -f "$HOME/.bashrc" ] && source "$HOME/.bashrc"
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    while IFS='=' read -r key value; do
+        [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+        key=$(echo "$key" | xargs)
+        value=$(echo "$value" | xargs)
+        value="${value%\"}"; value="${value#\"}"
+        value="${value%\'}"; value="${value#\'}"
+        export "$key=$value"
+    done < "$ENV_FILE"
+    set +a
+fi
 
-# Re-check after sourcing
-BOT_TOKEN="${BOT_TOKEN:-${TELEGRAM_BOT_TOKEN:-${TELEGRAM_TOKEN:-}}}"
-CHAT_ID="${CHAT_ID:-${DIGEST_CHAT_ID:-${TELEGRAM_CHAT_ID:-}}}"
+# Fallback: cũ-style env vars nếu có
+BOT_TOKEN="${TELEGRAM_TOKEN:-${TELEGRAM_BOT_TOKEN:-}}"
+CHAT_ID="${TELEGRAM_CHAT_ID:-${DIGEST_CHAT_ID:-}}"
 
 # ── Validate ──
 if [ -z "$BOT_TOKEN" ]; then
-    echo "❌ TELEGRAM_BOT_TOKEN chưa set"
-    echo "   export TELEGRAM_BOT_TOKEN=<bot_token>"
+    echo "❌ TELEGRAM_TOKEN chưa set"
+    echo "   Cập nhật trong: $ENV_FILE"
     exit 1
 fi
 
 if [ -z "$CHAT_ID" ]; then
     echo "❌ TELEGRAM_CHAT_ID chưa set"
-    echo "   export TELEGRAM_CHAT_ID=<your_chat_id>"
+    echo "   Cập nhật trong: $ENV_FILE"
     echo ""
     echo "   💡 Lấy chat ID:"
     echo "   1. Nhắn gì đó cho bot trên Telegram"
@@ -41,9 +47,9 @@ if [ -z "$CHAT_ID" ]; then
 fi
 
 # ── Gửi message trigger đến OpenClaw bot ──
-MESSAGE="Tạo bản tin thanh toán hôm nay"
+MESSAGE="${DIGEST_TRIGGER_MESSAGE:-Tạo bản tin thanh toán hôm nay}"
 
-echo "📤 Gửi trigger đến OpenClaw bot..."
+echo "📤 [$(date '+%Y-%m-%d %H:%M')] Gửi trigger đến OpenClaw bot..."
 echo "   Message: $MESSAGE"
 echo "   Chat ID: $CHAT_ID"
 

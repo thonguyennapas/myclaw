@@ -14,24 +14,17 @@ Bản tin thanh toán hằng ngày, tổng hợp 6 chuyên mục:
 
 ## 🚀 Triển khai trên Ubuntu Server
 
-### Bước 1: Copy skill lên server
+### Bước 1: Deploy skill (nếu chưa deploy toàn bộ)
 
 ```bash
-# Trên VPS — sau khi đã clone repo
-cp -r /tmp/myclaw/daily-payment-digest ~/.openclaw/skills/
-
-# Fix permissions & line endings
-chmod +x ~/.openclaw/skills/daily-payment-digest/scripts/*.sh
-chmod +x ~/.openclaw/skills/daily-payment-digest/scripts/*.py
-find ~/.openclaw/skills/daily-payment-digest/ -type f -exec dos2unix {} \;
-
-# Cài dependency
-pip install ddgs
+# Đã deploy toàn bộ myclaw? → bỏ qua bước này
+# Chưa? → chạy:
+cd /tmp/myclaw && bash scripts/deploy.sh --setup-env
 ```
 
 ### Bước 2: Kiểm tra
+
 ```bash
-# Kiểm tra file
 ls -la ~/.openclaw/skills/daily-payment-digest/
 ls -la ~/.openclaw/skills/daily-payment-digest/scripts/
 
@@ -40,9 +33,9 @@ python3 ~/.openclaw/skills/daily-payment-digest/scripts/digest.py --help
 ```
 
 ### Bước 3: Restart OpenClaw
+
 ```bash
-screen -r
-# Ctrl+C → chạy lại lệnh openclaw → Ctrl+A D
+bash scripts/start.sh --screen
 ```
 
 ---
@@ -51,13 +44,13 @@ screen -r
 
 ### ✅ Option 1: Chủ động — Gõ lệnh trên Telegram (Khuyên dùng)
 
-Bạn chủ động nhắn tin cho bot bất cứ lúc nào muốn đọc bản tin:
+Nhắn tin cho bot bất cứ lúc nào:
 
 ```
 Tổng hợp tin tức thanh toán hôm nay
 ```
 
-Hoặc các cách nói khác:
+Hoặc:
 ```
 Bản tin thanh toán
 Tin tức payment hôm nay
@@ -67,72 +60,62 @@ Digest
 
 **Cách hoạt động:**
 ```
-Bạn nhắn Telegram → OpenClaw nhận → match skill → chạy digest.py
-    → tìm kiếm ~30 queries → lọc noise → format đẹp → gửi về Telegram
+Bạn nhắn Telegram → OpenClaw → match skill → chạy digest.py
+    → tìm kiếm ~30 queries → lọc noise → format → gửi về Telegram
 ```
 
 **Ưu điểm:**
 - Chủ động, muốn đọc lúc nào cũng được
 - Không cần cấu hình thêm gì
-- Hoạt động ngay sau khi deploy skill
+- Hoạt động ngay sau deploy
 
 ---
 
-### ⏰ Option 2: Bị động — Cron Job tự động 8h sáng mỗi ngày
+### ⏰ Option 2: Bị động — Cron Job tự động 8h sáng
 
-Cron job tự động gửi 1 message đến OpenClaw bot lúc 8:00 AM,
-trigger skill chạy và trả kết quả về Telegram cho bạn.
+**Yêu cầu:** `TELEGRAM_CHAT_ID` đã set trong `~/.openclaw/.env`
 
-**Cách hoạt động:**
 ```
-8:00 AM → cron chạy cron_trigger.sh
-    → gửi message "Tổng hợp tin tức thanh toán hôm nay" đến bot
+8:00 AM → cron → cron_trigger.sh → gửi message đến bot
     → OpenClaw nhận → chạy skill → gửi bản tin về Telegram
 ```
 
 #### Cài đặt:
 
-**Cách 1: Chạy script setup tự động**
+**Cách 1: Script tự động**
 ```bash
 bash ~/.openclaw/skills/daily-payment-digest/scripts/cron_setup.sh
 ```
 
-**Cách 2: Cài thủ công**
+**Cách 2: Thủ công**
 ```bash
-# 1. Set environment variables
-echo 'export TELEGRAM_BOT_TOKEN="your_bot_token"' >> ~/.bashrc
-echo 'export TELEGRAM_CHAT_ID="your_chat_id"' >> ~/.bashrc
-source ~/.bashrc
+# 1. Đảm bảo TELEGRAM_CHAT_ID đã set trong ~/.openclaw/.env
+nano ~/.openclaw/.env
+# Thêm: TELEGRAM_CHAT_ID=your_chat_id
 
 # 2. Lấy Chat ID (nếu chưa có)
-#    Nhắn gì đó cho bot → mở link:
-#    https://api.telegram.org/bot<BOT_TOKEN>/getUpdates
+#    Nhắn gì đó cho bot → mở:
+#    https://api.telegram.org/bot<TOKEN>/getUpdates
 #    Tìm "chat":{"id": XXXXXX}
 
 # 3. Test trigger
 bash ~/.openclaw/skills/daily-payment-digest/scripts/cron_trigger.sh
 
-# 4. Thêm cron job (8:00 AM mỗi ngày)
+# 4. Thêm cron job
 crontab -e
 # Thêm dòng:
-# 0 8 * * * /home/YOUR_USER/.openclaw/skills/daily-payment-digest/scripts/cron_trigger.sh >> /home/YOUR_USER/.openclaw/logs/cron-digest.log 2>&1
+# 0 8 * * * /home/USER/.openclaw/skills/daily-payment-digest/scripts/cron_trigger.sh >> /home/USER/.openclaw/logs/cron-digest.log 2>&1
 
 # 5. Kiểm tra timezone
 timedatectl
-# Nếu cần đổi:
-# sudo timedatectl set-timezone Asia/Ho_Chi_Minh
+# Đổi nếu cần: sudo timedatectl set-timezone Asia/Ho_Chi_Minh
 ```
 
 #### Kiểm tra cron:
 ```bash
-# Xem cron jobs
-crontab -l
-
-# Xem log
-cat ~/.openclaw/logs/cron-digest.log
-
-# Xóa cron (nếu cần)
-crontab -l | grep -v "cron_trigger" | crontab -
+crontab -l                                                # Xem cron
+cat ~/.openclaw/logs/cron-digest.log                      # Xem log
+crontab -l | grep -v "cron_trigger" | crontab -          # Xóa cron
 ```
 
 ---
@@ -140,16 +123,19 @@ crontab -l | grep -v "cron_trigger" | crontab -
 ## ⚙️ Cấu hình nâng cao (Optional)
 
 ### Tavily API (Khuyên dùng)
-Search engine tốt hơn DuckDuckGo, free 1000 requests/tháng:
+Search engine AI tốt hơn DuckDuckGo, free 1000 requests/tháng:
+
 ```bash
-# Đăng ký: https://app.tavily.com/sign-in
-echo 'export TAVILY_API_KEY="tvly-xxxxx"' >> ~/.bashrc
-source ~/.bashrc
-# Restart OpenClaw
+# Thêm vào ~/.openclaw/.env
+nano ~/.openclaw/.env
+# Uncomment & điền: TAVILY_API_KEY=tvly-xxxxx
+
+# Restart
+bash scripts/start.sh --screen
 ```
 
-### Thêm/sửa chuyên mục tìm kiếm
-Chỉnh file `digest.py`, tìm `SEARCH_CATEGORIES` để thêm queries hoặc thay đổi chuyên mục.
+### Thêm/sửa chuyên mục
+Chỉnh `digest.py`, tìm `SEARCH_CATEGORIES` để thêm queries hoặc thay đổi chuyên mục.
 
 ---
 
@@ -157,33 +143,30 @@ Chỉnh file `digest.py`, tìm `SEARCH_CATEGORIES` để thêm queries hoặc th
 
 ### Skill không chạy trên Telegram?
 ```bash
-# Kiểm tra SKILL.md
-wc -l ~/.openclaw/skills/daily-payment-digest/SKILL.md
-# Phải < 60 dòng
+# Health check toàn bộ
+bash scripts/health-check.sh
 
 # Test script trực tiếp
 python3 ~/.openclaw/skills/daily-payment-digest/scripts/digest.py
 
-# Kiểm tra file output
+# Kiểm tra output
 ls -la ~/digests/
 cat ~/digests/digest-$(date +%Y-%m-%d).md
 ```
 
 ### Cron job không chạy?
 ```bash
-# Kiểm tra env
-echo $TELEGRAM_BOT_TOKEN
-echo $TELEGRAM_CHAT_ID
+# Kiểm tra .env
+grep TELEGRAM ~/.openclaw/.env
 
 # Test trigger manual
 bash ~/.openclaw/skills/daily-payment-digest/scripts/cron_trigger.sh
 
 # Kiểm tra timezone
-timedatectl
-date
+timedatectl && date
 ```
 
 ---
 
 📅 Cập nhật: 10/02/2026
-🔧 Version: 1.0
+🔧 Version: 2.0 — Unified .env config

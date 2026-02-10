@@ -1,7 +1,11 @@
 #!/bin/bash
 # ==============================================================================
 # 📰 Daily Payment Digest — Cron Setup cho OpenClaw
-# Cài cron job gửi trigger đến OpenClaw bot mỗi 8h sáng
+#
+# Tất cả cấu hình đọc từ ~/.openclaw/.env:
+#   - DIGEST_CRON_SCHEDULE  (mặc định: 0 8 * * *)
+#   - TELEGRAM_TOKEN
+#   - TELEGRAM_CHAT_ID
 # ==============================================================================
 
 set -e
@@ -20,9 +24,26 @@ echo ""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TRIGGER_SCRIPT="$SCRIPT_DIR/cron_trigger.sh"
+ENV_FILE="$HOME/.openclaw/.env"
+
+# ── Load unified .env ──
+if [ -f "$ENV_FILE" ]; then
+    while IFS='=' read -r key value; do
+        [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+        key=$(echo "$key" | xargs)
+        value=$(echo "$value" | xargs)
+        value="${value%\"}"; value="${value#\"}"
+        value="${value%\'}"; value="${value#\'}"
+        export "$key=$value"
+    done < "$ENV_FILE"
+else
+    echo -e "${RED}❌ File .env không tìm thấy: $ENV_FILE${NC}"
+    echo -e "   Chạy: cp .env.example $ENV_FILE && nano $ENV_FILE"
+    exit 1
+fi
 
 # ── 1. Kiểm tra files ──
-echo -e "${BLUE}[1/4] Kiểm tra files...${NC}"
+echo -e "${BLUE}[1/5] Kiểm tra files...${NC}"
 
 if [ ! -f "$TRIGGER_SCRIPT" ]; then
     echo -e "${RED}❌ Không tìm thấy cron_trigger.sh${NC}"
@@ -34,26 +55,38 @@ echo -e "  ${GREEN}✅ cron_trigger.sh: OK${NC}"
 
 # ── 2. Kiểm tra env ──
 echo ""
-echo -e "${BLUE}[2/4] Kiểm tra Telegram config...${NC}"
+echo -e "${BLUE}[2/5] Kiểm tra Telegram config từ .env...${NC}"
 
-if [ -z "$TELEGRAM_BOT_TOKEN" ] && [ -z "$TELEGRAM_TOKEN" ]; then
-    echo -e "  ${YELLOW}⚠️ TELEGRAM_BOT_TOKEN chưa set${NC}"
+BOT_TOKEN="${TELEGRAM_TOKEN:-${TELEGRAM_BOT_TOKEN:-}}"
+CHAT_ID="${TELEGRAM_CHAT_ID:-${DIGEST_CHAT_ID:-}}"
+
+if [ -z "$BOT_TOKEN" ]; then
+    echo -e "  ${YELLOW}⚠️ TELEGRAM_TOKEN chưa set trong .env${NC}"
     read -p "  Nhập Bot Token: " TOKEN_INPUT
     if [ -n "$TOKEN_INPUT" ]; then
-        echo "export TELEGRAM_BOT_TOKEN=\"$TOKEN_INPUT\"" >> ~/.bashrc
-        echo -e "  ${GREEN}✅ Đã lưu vào ~/.bashrc${NC}"
+        # Cập nhật trực tiếp vào .env
+        if grep -q "^TELEGRAM_TOKEN=" "$ENV_FILE"; then
+            sed -i "s|^TELEGRAM_TOKEN=.*|TELEGRAM_TOKEN=$TOKEN_INPUT|" "$ENV_FILE"
+        else
+            echo "TELEGRAM_TOKEN=$TOKEN_INPUT" >> "$ENV_FILE"
+        fi
+        echo -e "  ${GREEN}✅ Đã lưu vào $ENV_FILE${NC}"
     fi
 else
     echo -e "  ${GREEN}✅ Bot Token: OK${NC}"
 fi
 
-if [ -z "$TELEGRAM_CHAT_ID" ] && [ -z "$DIGEST_CHAT_ID" ]; then
-    echo -e "  ${YELLOW}⚠️ TELEGRAM_CHAT_ID chưa set${NC}"
+if [ -z "$CHAT_ID" ]; then
+    echo -e "  ${YELLOW}⚠️ TELEGRAM_CHAT_ID chưa set trong .env${NC}"
     echo "  💡 Lấy ID: nhắn tin cho bot → mở https://api.telegram.org/bot<TOKEN>/getUpdates"
     read -p "  Nhập Chat ID: " CHAT_INPUT
     if [ -n "$CHAT_INPUT" ]; then
-        echo "export TELEGRAM_CHAT_ID=\"$CHAT_INPUT\"" >> ~/.bashrc
-        echo -e "  ${GREEN}✅ Đã lưu vào ~/.bashrc${NC}"
+        if grep -q "^TELEGRAM_CHAT_ID=" "$ENV_FILE"; then
+            sed -i "s|^TELEGRAM_CHAT_ID=.*|TELEGRAM_CHAT_ID=$CHAT_INPUT|" "$ENV_FILE"
+        else
+            echo "TELEGRAM_CHAT_ID=$CHAT_INPUT" >> "$ENV_FILE"
+        fi
+        echo -e "  ${GREEN}✅ Đã lưu vào $ENV_FILE${NC}"
     fi
 else
     echo -e "  ${GREEN}✅ Chat ID: OK${NC}"
@@ -61,7 +94,7 @@ fi
 
 # ── 3. Timezone ──
 echo ""
-echo -e "${BLUE}[3/4] Kiểm tra timezone...${NC}"
+echo -e "${BLUE}[3/5] Kiểm tra timezone...${NC}"
 
 CURRENT_TZ=$(timedatectl show -p Timezone --value 2>/dev/null || echo "Unknown")
 echo -e "  📍 Timezone: ${CURRENT_TZ}"
@@ -75,18 +108,43 @@ if [ "$CURRENT_TZ" != "Asia/Ho_Chi_Minh" ]; then
     fi
 fi
 
-# ── 4. Cài cron ──
+# ── 4. Đọc schedule từ .env ──
 echo ""
-echo -e "${BLUE}[4/4] Cài đặt cron job...${NC}"
+echo -e "${BLUE}[4/5] Đọc lịch chạy từ .env...${NC}"
 
-CRON_LINE="0 8 * * * $TRIGGER_SCRIPT >> $HOME/.openclaw/logs/cron-digest.log 2>&1"
+CRON_SCHEDULE="${DIGEST_CRON_SCHEDULE:-0 8 * * *}"
+echo -e "  ⏰ Lịch chạy: ${GREEN}${CRON_SCHEDULE}${NC}"
+
+# Giải thích schedule
+CRON_HOUR=$(echo "$CRON_SCHEDULE" | awk '{print $2}')
+CRON_MIN=$(echo "$CRON_SCHEDULE" | awk '{print $1}')
+CRON_DOW=$(echo "$CRON_SCHEDULE" | awk '{print $5}')
+
+case "$CRON_DOW" in
+    "*")     DOW_TEXT="mỗi ngày" ;;
+    "1-5")   DOW_TEXT="Thứ 2 → Thứ 6" ;;
+    "1,3,5") DOW_TEXT="Thứ 2, 4, 6" ;;
+    *)       DOW_TEXT="$CRON_DOW" ;;
+esac
+
+echo -e "  📋 Nghĩa là: ${CRON_HOUR}:${CRON_MIN} — ${DOW_TEXT}"
+echo ""
+echo -e "  ${YELLOW}💡 Đổi lịch? Sửa DIGEST_CRON_SCHEDULE trong:${NC}"
+echo -e "     $ENV_FILE"
+echo -e "     Ví dụ: DIGEST_CRON_SCHEDULE=0 7 * * 1-5  (7h sáng, T2-T6)"
+
+# ── 5. Cài cron ──
+echo ""
+echo -e "${BLUE}[5/5] Cài đặt cron job...${NC}"
+
+CRON_LINE="$CRON_SCHEDULE $TRIGGER_SCRIPT >> $HOME/.openclaw/logs/cron-digest.log 2>&1"
 
 # Xóa entry cũ nếu có
 (crontab -l 2>/dev/null | grep -v "cron_trigger.sh" | grep -v "Daily Payment Digest") > /tmp/crontab_tmp || true
 
 # Thêm entry mới
 echo "" >> /tmp/crontab_tmp
-echo "# 📰 Daily Payment Digest — 8:00 AM mỗi ngày" >> /tmp/crontab_tmp
+echo "# 📰 Daily Payment Digest — schedule from .env" >> /tmp/crontab_tmp
 echo "$CRON_LINE" >> /tmp/crontab_tmp
 
 crontab /tmp/crontab_tmp
@@ -94,7 +152,7 @@ rm -f /tmp/crontab_tmp
 
 mkdir -p "$HOME/.openclaw/logs"
 
-echo -e "  ${GREEN}✅ Cron job: 8:00 AM mỗi ngày${NC}"
+echo -e "  ${GREEN}✅ Cron job đã cài: ${CRON_SCHEDULE}${NC}"
 
 # ── Done ──
 echo ""
@@ -103,7 +161,7 @@ echo -e "${GREEN}✅ HOÀN TẤT!${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "📋 Cách hoạt động:"
-echo "  ⏰ 8:00 AM → cron gửi message đến OpenClaw bot"
+echo "  ⏰ ${CRON_HOUR}:${CRON_MIN} ${DOW_TEXT} → cron gửi message đến OpenClaw bot"
 echo "  🤖 OpenClaw nhận → chạy skill daily-payment-digest"
 echo "  📰 Kết quả → gửi về Telegram cho bạn"
 echo ""
@@ -111,4 +169,10 @@ echo "📌 Lệnh hữu ích:"
 echo "  crontab -l                              # Xem cron"
 echo "  bash $TRIGGER_SCRIPT                    # Test trigger"
 echo "  crontab -l | grep -v cron_trigger | crontab -  # Xóa cron"
+echo ""
+echo "⚙️  Tùy chỉnh:"
+echo "  nano $ENV_FILE"
+echo "    DIGEST_CRON_SCHEDULE=0 7 * * 1-5      # Đổi giờ / ngày"
+echo "    DIGEST_MAX_RESULTS=3                  # Giảm số bài"
+echo "    DIGEST_TIMELIMIT=d                    # Chỉ lấy tin hôm nay"
 echo ""
