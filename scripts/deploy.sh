@@ -129,17 +129,24 @@ echo -e "  ${GREEN}✅ Permissions set${NC}"
 echo ""
 echo -e "${BLUE}[4/5] Cài dependencies...${NC}"
 
+# Detect PEP 668 (Python 3.12+ trên Ubuntu/Debian chặn pip install system-wide)
+PIP_FLAGS=""
+if pip install --help 2>&1 | grep -q "break-system-packages"; then
+    PIP_FLAGS="--break-system-packages"
+    echo -e "  ${YELLOW}ℹ️  PEP 668 detected — dùng --break-system-packages${NC}"
+fi
+
 # duckduckgo-search (tên package mới, cung cấp module duckduckgo_search + ddgs CLI)
-if pip install duckduckgo-search 2>/dev/null; then
+if pip install $PIP_FLAGS duckduckgo-search 2>/dev/null; then
     echo -e "  ${GREEN}✅ duckduckgo-search installed${NC}"
-elif pip install ddgs 2>/dev/null; then
+elif pip install $PIP_FLAGS ddgs 2>/dev/null; then
     echo -e "  ${GREEN}✅ ddgs installed (legacy)${NC}"
 else
-    echo -e "  ${RED}❌ Không cài được search package — thử: pip3 install duckduckgo-search${NC}"
+    echo -e "  ${RED}❌ Không cài được search package — thử: pip3 install --break-system-packages duckduckgo-search${NC}"
 fi
 
 # requests — dùng cho extract URL content
-pip install requests 2>/dev/null && echo -e "  ${GREEN}✅ requests installed${NC}" || true
+pip install $PIP_FLAGS requests 2>/dev/null && echo -e "  ${GREEN}✅ requests installed${NC}" || true
 
 # ── Step 5: Setup .env ──
 echo ""
