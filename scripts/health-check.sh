@@ -161,10 +161,10 @@ else
     check_fail "Python3 not found"
 fi
 
-if python3 -c "import ddgs" 2>/dev/null || python3 -c "from duckduckgo_search import DDGS" 2>/dev/null; then
-    check_pass "ddgs package installed"
+if python3 -c "from duckduckgo_search import DDGS" 2>/dev/null || python3 -c "import ddgs" 2>/dev/null; then
+    check_pass "duckduckgo-search package installed"
 else
-    check_fail "ddgs not installed — run: pip install ddgs"
+    check_fail "duckduckgo-search not installed — run: pip install duckduckgo-search"
 fi
 
 if command -v openclaw &>/dev/null; then

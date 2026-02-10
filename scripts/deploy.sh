@@ -129,7 +129,17 @@ echo -e "  ${GREEN}✅ Permissions set${NC}"
 echo ""
 echo -e "${BLUE}[4/5] Cài dependencies...${NC}"
 
-pip install ddgs 2>/dev/null && echo -e "  ${GREEN}✅ ddgs installed${NC}" || echo -e "  ${YELLOW}⚠️  pip install ddgs thất bại${NC}"
+# duckduckgo-search (tên package mới, cung cấp module duckduckgo_search + ddgs CLI)
+if pip install duckduckgo-search 2>/dev/null; then
+    echo -e "  ${GREEN}✅ duckduckgo-search installed${NC}"
+elif pip install ddgs 2>/dev/null; then
+    echo -e "  ${GREEN}✅ ddgs installed (legacy)${NC}"
+else
+    echo -e "  ${RED}❌ Không cài được search package — thử: pip3 install duckduckgo-search${NC}"
+fi
+
+# requests — dùng cho extract URL content
+pip install requests 2>/dev/null && echo -e "  ${GREEN}✅ requests installed${NC}" || true
 
 # ── Step 5: Setup .env ──
 echo ""
