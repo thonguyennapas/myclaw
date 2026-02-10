@@ -99,6 +99,20 @@ echo -e "${BLUE}[2/5] Copy skills vào $SKILLS_DIR...${NC}"
 
 mkdir -p "$SKILLS_DIR"
 
+# Dọn skill cũ không còn trong danh sách (tránh xung đột sau refactor)
+if [ -d "$SKILLS_DIR" ]; then
+    for existing in $(find "$SKILLS_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' 2>/dev/null); do
+        KEEP=false
+        for skill in "${SKILLS[@]}"; do
+            [ "$existing" = "$skill" ] && KEEP=true && break
+        done
+        if [ "$KEEP" = false ]; then
+            rm -rf "$SKILLS_DIR/$existing"
+            echo -e "  ${YELLOW}🗑️  Xóa skill cũ: $existing${NC}"
+        fi
+    done
+fi
+
 for skill in "${SKILLS[@]}"; do
     if [ -d "$SOURCE_DIR/$skill" ]; then
         cp -r "$SOURCE_DIR/$skill" "$SKILLS_DIR/"
@@ -210,6 +224,7 @@ find "$SKILLS_DIR" -maxdepth 2 -name "SKILL.md" | sort | while read f; do
 done
 echo ""
 echo -e "📌 ${YELLOW}Bước tiếp theo:${NC}"
+echo -e "  0. Add api key vào .env:  bash scripts/deploy.sh --setup-env"
 echo -e "  1. Kiểm tra .env:  cat $ENV_TARGET"
 echo -e "  2. Start gateway:  bash scripts/start.sh"
 echo -e "  3. Hoặc screen:    bash scripts/start.sh --screen"
