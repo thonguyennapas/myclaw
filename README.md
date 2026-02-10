@@ -21,6 +21,14 @@ myclaw/
 │   └── scripts/
 │       └── search.py              ← Script tìm kiếm (Tavily/DDG/Google)
 │
+├── daily-payment-digest/          ← 📰 BẢN TIN HẰNG NGÀY
+│   ├── SKILL.md                   ← Skill definition
+│   ├── DEPLOY.md                  ← Hướng dẫn deploy 2 option
+│   └── scripts/
+│       ├── digest.py              ← Script tổng hợp tin
+│       ├── cron_trigger.sh        ← Trigger cho cron job
+│       └── cron_setup.sh          ← Setup cron tự động
+│
 ├── blockchain-policy-research/    ← 📊 Skill nghiên cứu chính
 │   ├── SKILL.md                   ← Quy trình + lệnh tìm kiếm
 │   ├── scripts/research.py        ← Script tạo báo cáo
@@ -63,7 +71,16 @@ User (Telegram) → OpenClaw Gateway → AI Agent
 - Hỗ trợ tiếng Việt (`--region vn-vi`), tin tức, batch search
 - **Cần**: `pip install ddgs` (miễn phí)
 
-### 2. 📊 Blockchain Policy Research
+### 2. 📰 Daily Payment Tech Digest (NEW)
+- **Bản tin thanh toán tổng hợp 6 chuyên mục**
+- 2 cách dùng:
+  - ✅ **Chủ động**: Nhắn Telegram *"Tổng hợp tin tức thanh toán"*
+  - ⏰ **Bị động**: Cron job tự gửi mỗi 8:00 AM
+- Tìm kiếm đa ngôn ngữ (EN + VI), lọc noise, xếp hạng relevance
+- Format đẹp cho Telegram với link nguồn gốc
+- **Deploy**: xem `daily-payment-digest/DEPLOY.md`
+
+### 3. 📊 Blockchain Policy Research
 - Framework 5 phần: Xu hướng → Chính sách → Đà Nẵng → NAPAS → Summary
 - Tự động gọi web-search để tìm dữ liệu
 - Chống bịa: mọi dữ kiện phải có nguồn

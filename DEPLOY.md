@@ -30,6 +30,7 @@ cp -r /tmp/myclaw/deep-research-orchestrator ~/.openclaw/skills/
 cp -r /tmp/myclaw/source-validator ~/.openclaw/skills/
 cp -r /tmp/myclaw/web-research-aggregator ~/.openclaw/skills/
 cp -r /tmp/myclaw/web-search ~/.openclaw/skills/
+cp -r /tmp/myclaw/daily-payment-digest ~/.openclaw/skills/
 rm -rf /tmp/myclaw
 
 # 2. Fix line endings & permissions
@@ -72,9 +73,14 @@ cp -r /tmp/myclaw/deep-research-orchestrator ~/.openclaw/skills/
 cp -r /tmp/myclaw/source-validator ~/.openclaw/skills/
 cp -r /tmp/myclaw/web-research-aggregator ~/.openclaw/skills/
 cp -r /tmp/myclaw/web-search ~/.openclaw/skills/
+cp -r /tmp/myclaw/daily-payment-digest ~/.openclaw/skills/
 
 rm -rf /tmp/myclaw
 ```
+
+> 📰 **Daily Payment Digest**: Xem hướng dẫn chi tiết tại `daily-payment-digest/DEPLOY.md`
+> - **Option 1 (Chủ động)**: Nhắn Telegram "Tổng hợp tin tức thanh toán" → chạy ngay
+> - **Option 2 (Cron)**: `bash ~/.openclaw/skills/daily-payment-digest/scripts/cron_setup.sh`
 
 ### BƯỚC 3: Kiểm tra cấu trúc
 
@@ -173,6 +179,7 @@ cp -r /tmp/myclaw/deep-research-orchestrator ~/.openclaw/skills/
 cp -r /tmp/myclaw/source-validator ~/.openclaw/skills/
 cp -r /tmp/myclaw/web-research-aggregator ~/.openclaw/skills/
 cp -r /tmp/myclaw/web-search ~/.openclaw/skills/
+cp -r /tmp/myclaw/daily-payment-digest ~/.openclaw/skills/
 rm -rf /tmp/myclaw
 find ~/.openclaw/skills/ -type f \( -name "*.md" -o -name "*.py" \) -exec dos2unix {} \;
 
