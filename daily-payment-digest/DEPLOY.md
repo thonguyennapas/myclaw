@@ -76,9 +76,12 @@ Bạn nhắn Telegram → OpenClaw → match skill → chạy digest.py
 **Yêu cầu:** `TELEGRAM_CHAT_ID` đã set trong `~/.openclaw/.env`
 
 ```
-8:00 AM → cron → cron_trigger.sh → gửi message đến bot
-    → OpenClaw nhận → chạy skill → gửi bản tin về Telegram
+8:00 AM → cron → cron_trigger.sh → chạy digest.py trực tiếp
+    → tạo file digest → đọc file → gửi thẳng qua Telegram API
 ```
+
+> ⚠️ Cron trigger chạy **trực tiếp** `digest.py` rồi gửi qua Telegram API,
+> **không** đi qua OpenClaw gateway (vì bot không thể trigger chính mình).
 
 #### Cài đặt:
 

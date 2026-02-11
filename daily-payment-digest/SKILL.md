@@ -44,3 +44,4 @@ Nếu file quá dài, chia thành nhiều tin nhắn theo từng chuyên mục (
 - Script tự động tìm ~30 queries EN + VI, lọc noise, xếp hạng relevance
 - Output đã format sẵn cho Telegram, CHỈ CẦN gửi nguyên văn
 - File lưu tại `~/digests/digest-YYYY-MM-DD.md`
+- Cron job chạy `digest.py` trực tiếp rồi gửi qua Telegram API (không đi qua gateway)
